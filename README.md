@@ -82,7 +82,7 @@ Each house has one Edge Unit. The forecast and the grid check feed the scheduler
 | `grid-sim/` | pandapower model of a neighbourhood | Mithil Rajapakse |
 | `fault-detect/` | Faults and unsafe inverter settings | Mithil Rajapakse |
 | `dashboard/` | Household page and utility page | Senesh Fernando |
-| `data/` | Raw logs, processed tables, and small anonymised samples | Senesh Fernando |
+| `data/` | Weather downloads, simulated PV tables, and small samples. See `data/README.md` | Senesh Fernando |
 | `docs/` | The proposal, and later write-ups | Mithil Rajapakse |
 
 Each folder has a short README with the planned contents. `data/raw/` and `data/processed/` are gitignored. `data/sample/` is tracked.
@@ -117,7 +117,7 @@ pip install -r requirements.txt
 
 On Windows, activate with `.venv\Scripts\activate`.
 
-This tree is a scaffold. The folders describe the work. The models, the Pi code and the dashboard are not written yet. `requirements.txt` is a shared starting set: pandas, NumPy, LightGBM, pandapower, Requests, PyModbus, scikit-learn, Matplotlib, Jupyter and Streamlit.
+Weather download and the simulated rooftop PV series are in `data/`. See `data/README.md` for the commands. The forecast models, the Pi code and the dashboard are not written yet. `requirements.txt` is a shared starting set: pandas, NumPy, LightGBM, pandapower, Requests, PyModbus, scikit-learn, Matplotlib, Jupyter, Streamlit, pvlib and pytest.
 
 Put pilot inverter logs in `data/raw/`. Put cleaned tables in `data/processed/`. Git ignores both directories, apart from a `.gitkeep` file, so those logs are not committed by mistake. `data/sample/` is the opposite: it is committed, and it should hold only small anonymised examples.
 
