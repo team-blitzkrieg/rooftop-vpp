@@ -17,7 +17,7 @@ Mithil Rajapakse, Tatiana Armstrong and Senesh Fernando all commit here. `main` 
 
 ## What not to commit
 
-- Files under `data/raw/` or `data/processed/`. Those directories are gitignored because they will hold the pilot home's inverter logs. A `.gitkeep` is already there so the empty folder stays in git.
+- Pilot inverter logs, or any other private file, dropped in `data/raw/` or `data/processed/` outside `weather/`, `live/` and `pv_simulated/`. Those loose files are gitignored. The weather downloads and the simulated PV tables in those three folders are meant to be committed.
 - Anything in `data/sample/` that is not a small anonymised example.
 - Trained model files. They are gitignored. Rebuild them from the scripts instead.
 - `.env` files, passwords and API keys.

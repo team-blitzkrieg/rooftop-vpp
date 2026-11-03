@@ -55,9 +55,14 @@ Desktop.ini
 models/
 checkpoints/
 
-# Private pilot data. Inverter logs from the pilot home must never be committed.
-# data/sample/ is intentionally not ignored.
-data/raw/**
+# Private pilot data. Anything dropped straight into raw/ or processed/
+# stays ignored, so an inverter log is not committed by mistake.
+# The weather downloads, live forecasts and simulated PV tables are tracked
+# so the team can clone them. data/sample/ is tracked too.
+data/raw/*
 !data/raw/.gitkeep
-data/processed/**
+!data/raw/weather/
+!data/raw/live/
+data/processed/*
 !data/processed/.gitkeep
+!data/processed/pv_simulated/

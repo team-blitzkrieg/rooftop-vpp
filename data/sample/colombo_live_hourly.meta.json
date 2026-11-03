@@ -20,5 +20,5 @@
   "rows": 168,
   "sample": true,
   "sample_of": "data/raw/live/colombo/20261103T143915Z/hourly.csv",
-  "note_sample": "Committed copy of one live forecast pull. The timestamped original under data/raw/live is gitignored."
+  "note_sample": "Committed copy of one live forecast pull. The timestamped original is under data/raw/live."
 }

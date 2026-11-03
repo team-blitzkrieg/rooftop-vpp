@@ -6,14 +6,14 @@ Owner: Senesh Fernando (software), for the download scripts and the folder layou
 
 Weather for the forecast, and a simulated rooftop PV series to train on until the pilot inverter logs exist in February 2027. There is no public Sri Lankan rooftop generation dataset in this repository. The `pv_*_simulated` columns are model output. They are not meter readings, and they are not a description of how much a real roof in Colombo produces.
 
-Logs from the pilot home stay in `raw/` and out of git.
+Logs from the pilot home stay out of git. Put them in `raw/` but not inside `weather/` or `live/`. Git ignores those loose files.
 
 ## Layout
 
 - `pipeline/` is the Python package. Run it as `python -m data.pipeline`.
-- `raw/` holds files as collected. Git ignores everything here except `.gitkeep`. A fresh `fetch-weather` overwrites that location's file for the source you asked for. It does not append.
-- `processed/` holds the simulated PV tables. Same git rule.
-- `sample/` holds a small committed extract so the column layout is visible without the full files. One month for Colombo, plus one live forecast snapshot.
+- `raw/weather/` and `raw/live/` are the downloaded weather files. They are in git. A fresh `fetch-weather` overwrites that location's file for the source you asked for. It does not append.
+- `processed/pv_simulated/` is the simulated PV. It is in git too. The clone is about 600 MB because of these tables.
+- `sample/` is a small Colombo extract, useful if you only want to see the columns.
 
 After a full run the files look like this:
 

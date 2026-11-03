@@ -1,0 +1,21 @@
+{
+  "project": "Rooftops to Power Plant",
+  "source": "open_meteo_forecast",
+  "data_kind": "forecast",
+  "endpoint": "https://api.open-meteo.com/v1/forecast",
+  "timezone": "Asia/Colombo",
+  "forecast_days": 7,
+  "retrieved_at_utc": "2026-11-03T14:39:15.101529+00:00",
+  "location_id": "anuradhapura",
+  "location_name": "Anuradhapura",
+  "requested_latitude": 8.3114,
+  "requested_longitude": 80.4037,
+  "licence": "CC BY 4.0",
+  "licence_url": "https://open-meteo.com/en/licence",
+  "attribution": "Weather data by Open-Meteo.com, licensed CC BY 4.0 (https://open-meteo.com/en/licence).",
+  "note_15min": "Open-Meteo says 15-minute data outside Europe and North America is interpolated from hourly values. Sri Lanka is outside those regions.",
+  "radiation_note": "Radiation variables are the mean over the preceding interval. Temperature, humidity, cloud cover and wind are the value at the timestamp.",
+  "pv_is_simulated": false,
+  "interval": "hourly",
+  "rows": 168
+}

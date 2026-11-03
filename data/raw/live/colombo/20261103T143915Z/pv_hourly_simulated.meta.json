@@ -1,0 +1,42 @@
+{
+  "project": "Rooftops to Power Plant",
+  "pv_is_simulated": true,
+  "is_measured_generation": false,
+  "note": "Hourly AC output from a pvlib model of a generic rooftop array. Not measured inverter data, and not a statistic of Sri Lankan roofs.",
+  "weather_source": "open_meteo_forecast",
+  "weather_data_kind": "forecast",
+  "weather_file": "/agent/repos/rooftop-vpp/data/raw/live/colombo/20261103T143915Z/hourly.csv",
+  "system_sizes_kw": [
+    5.0
+  ],
+  "timezone": "Asia/Colombo",
+  "model": {
+    "library": "pvlib",
+    "library_version": "0.16.1",
+    "library_url": "https://pvlib-python.readthedocs.io/",
+    "library_licence": "BSD-3-Clause",
+    "transposition": "isotropic",
+    "albedo": 0.2,
+    "dc_model": "pvwatts",
+    "temperature_model": "sapm",
+    "temperature_parameter_set": "close_mount_glass_glass",
+    "temperature_coefficients": {
+      "a": -2.98,
+      "b": -0.0471,
+      "deltaT": 1
+    },
+    "gamma_pdc_per_c": -0.004,
+    "temp_ref_c": 25.0,
+    "ac_model": "pvwatts inverter",
+    "eta_inv_nom": 0.96,
+    "array_stc_kw_equals_ac_nameplate": true,
+    "tilt_deg": 10.0,
+    "azimuth_deg": 180.0,
+    "azimuth_convention": "pvlib: 180 is due south, 90 is east, 0 is north"
+  },
+  "generated_at_utc": "2026-11-03T14:39:15.246846+00:00",
+  "interval": "hourly",
+  "rows": 168,
+  "location_id": "colombo",
+  "retrieved_at_utc": "2026-11-03T14:39:15.101529+00:00"
+}
