@@ -1,0 +1,11 @@
+# Starting set for the scaffold. Loose pins, not a lockfile.
+pandas>=3.0,<4
+numpy>=2.2,<3
+lightgbm>=4.6,<5
+pandapower>=3.0,<4
+requests>=2.32,<3
+pymodbus>=3.8,<4
+scikit-learn>=1.6,<2
+matplotlib>=3.10,<4
+jupyter>=1.1,<2
+streamlit>=1.40,<2
