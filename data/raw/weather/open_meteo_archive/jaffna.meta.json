@@ -1,0 +1,23 @@
+{
+  "project": "Rooftops to Power Plant",
+  "source": "open_meteo_archive",
+  "data_kind": "reanalysis",
+  "description": "Open-Meteo Historical Weather API. With models=era5 this is ERA5 reanalysis, not a forecast.",
+  "endpoint": "https://archive-api.open-meteo.com/v1/archive",
+  "model": "era5",
+  "timezone": "Asia/Colombo",
+  "start_date": "2020-01-01",
+  "end_date": "2026-10-27",
+  "forecast_lead_hours": null,
+  "radiation_note": "Open-Meteo shortwave, direct, diffuse and direct-normal values are the mean of the preceding hour. Temperature, humidity, cloud cover and wind are the value at the timestamp.",
+  "pv_is_simulated": false,
+  "licence": "CC BY 4.0",
+  "licence_url": "https://open-meteo.com/en/licence",
+  "attribution": "Weather data by Open-Meteo.com, licensed CC BY 4.0 (https://open-meteo.com/en/licence). Requested with models=era5. ERA5 is produced by ECMWF for the Copernicus Climate Change Service and is also under CC BY 4.0.",
+  "retrieved_at_utc": "2026-11-03T12:32:52.306899+00:00",
+  "rows": 59808,
+  "location_id": "jaffna",
+  "location_name": "Jaffna",
+  "requested_latitude": 9.6615,
+  "requested_longitude": 80.0255
+}

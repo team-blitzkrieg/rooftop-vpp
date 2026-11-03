@@ -129,7 +129,7 @@ def export_live_snapshot(
         meta["sample_of"] = _repo_relative(source)
         meta["note_sample"] = (
             "Committed copy of one live forecast pull. The timestamped "
-            "original under data/raw/live is gitignored."
+            "original is under data/raw/live."
         )
         target.with_suffix(".meta.json").write_text(
             json.dumps(meta, indent=2, default=str) + "\n",
@@ -194,7 +194,7 @@ def _write_month_slice(
     meta["sample_of"] = _repo_relative(path)
     meta["note_sample"] = (
         "Small committed extract of one calendar month. Same columns as the "
-        "full file, which is gitignored under data/raw or data/processed. "
+        "full file under data/raw or data/processed. "
         "start_date and end_date, when present, are the range of that full download."
     )
     target = sample_dir / filename

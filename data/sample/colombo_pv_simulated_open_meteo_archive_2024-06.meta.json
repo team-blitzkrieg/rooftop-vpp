@@ -44,5 +44,5 @@
   "sample_location_id": "colombo",
   "sample_rows": 2160,
   "sample_of": "data/processed/pv_simulated/open_meteo_archive/colombo.csv",
-  "note_sample": "Small committed extract of one calendar month. Same columns as the full file, which is gitignored under data/raw or data/processed. start_date and end_date, when present, are the range of that full download."
+  "note_sample": "Small committed extract of one calendar month. Same columns as the full file under data/raw or data/processed. start_date and end_date, when present, are the range of that full download."
 }

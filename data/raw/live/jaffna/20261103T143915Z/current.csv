@@ -1,0 +1,2 @@
+timestamp,location_id,latitude,longitude,grid_latitude,grid_longitude,grid_elevation_m,source,data_kind,forecast_lead_hours,temp_c,relative_humidity_pct,precipitation_mm,cloud_cover_pct,wind_speed_ms,ghi_wm2,dni_wm2,dhi_wm2,direct_horizontal_wm2,retrieved_at_utc
+2026-11-03T20:00:00+05:30,jaffna,9.6615,80.0255,9.66608,80.034874,9.0,open_meteo_forecast,current,-0.15419486916666666,27.4,86,0.0,98,3.03,,,,,2026-11-03T14:39:15.101529+00:00
