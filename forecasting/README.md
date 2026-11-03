@@ -13,4 +13,4 @@ Predict, for the next few hours, how much the roof will generate and how much th
 - A small evaluation step so we can quote a forecast error
 - A plain table of predictions for the scheduler to read
 
-Training files do not live in this folder. See `data/`. Nothing here runs yet.
+Training files do not live in this folder. `data/pipeline/` downloads the weather and writes a simulated PV target (`pv_ac_kw_simulated`) until the pilot inverter logs exist. For a model that will later see a forecast, train on `open_meteo_previous_day1`, not on the ERA5 archive. See `data/README.md`. Nothing in this folder runs yet.
