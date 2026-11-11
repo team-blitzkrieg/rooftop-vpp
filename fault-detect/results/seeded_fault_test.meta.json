@@ -1,0 +1,10 @@
+{
+  "is_simulated": true,
+  "is_measured_generation": false,
+  "year": "2025",
+  "fault_start": "2025-06-01",
+  "system_kw": 5.0,
+  "expected_from": "pvlib model on Open-Meteo archive weather",
+  "healthy_actual_from": "pvlib model on NASA POWER weather",
+  "script": "fault-detect/evaluate.py"
+}

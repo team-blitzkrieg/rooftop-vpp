@@ -1,0 +1,17 @@
+{
+  "is_simulated": true,
+  "is_measured": false,
+  "made_by": "grid-sim/gridsim/demand.py",
+  "label": "Simulated household demand. Not measured.",
+  "daily_kwh_home_with_solar": 10.0,
+  "daily_kwh_home_without_solar": 4.0,
+  "home_to_home_spread": "lognormal, sigma 0.35, fixed per home",
+  "hour_to_hour_noise": "lognormal, sigma 0.25, independent per home and hour",
+  "shape": "morning bump 05:00-08:00, evening peak 18:00-22:00 with the top at 19:00-20:00",
+  "weekend": "15% more use 09:00-16:00, same daily total",
+  "power_factor": 0.95,
+  "ev_charger_kw": 3.7,
+  "ev_charge_hours": 2,
+  "ev_start_hour": "random each evening, 18:00 to 21:00",
+  "basis": "Team estimate. 10 kWh/day is about 300 units a month, 4 kWh/day about 120. To be replaced by utility data or pilot readings."
+}
