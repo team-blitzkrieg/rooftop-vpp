@@ -8,6 +8,8 @@ Three free pieces:
 - GitHub Actions runs the hourly forecast and the weekly retrain.
 - Render free web service, or a Hugging Face Space, serves the FastAPI app.
 
+Vercel is not used for the backend. The API is the Render service or the Hugging Face Space above. `vercel.json` sets `ignoreCommand` to `exit 0`, so Vercel skips the build instead of bundling this Python repo into a serverless function.
+
 `docker compose` is only for a laptop. It starts Postgres 16 and the API. It is not the hosted setup.
 
 ```bash
