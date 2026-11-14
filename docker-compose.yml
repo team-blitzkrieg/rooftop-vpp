@@ -1,0 +1,110 @@
+# Local: docker compose up --build
+# A VM near Sri Lanka adds Caddy with: docker compose --profile vm up -d --build
+# See DEPLOY.md. Do not publish Postgres or MLflow ports on the VM.
+
+services:
+  db:
+    image: timescale/timescaledb:2.17.2-pg16
+    environment:
+      POSTGRES_USER: rooftop
+      POSTGRES_PASSWORD: rooftop
+      POSTGRES_DB: rooftop
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./deploy/init-db.sh:/docker-entrypoint-initdb.d/01-mlflow-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rooftop -d rooftop"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mlflow:
+    build: .
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri postgresql://rooftop:rooftop@db:5432/mlflow
+      --default-artifact-root file:///mlflow
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      # The client calls http://mlflow:5000, so that Host header has to be allowed.
+      # MLflow's default list is localhost and private IPs only.
+      MLFLOW_SERVER_ALLOWED_HOSTS: "localhost,localhost:*,127.0.0.1,127.0.0.1:*,mlflow,mlflow:*,172.*,10.*,192.168.*"
+    volumes:
+      - mlflow-data:/mlflow
+    ports:
+      - "127.0.0.1:5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  seed:
+    build: .
+    command: python -m serve.seed
+    environment:
+      DATABASE_URL: postgresql://rooftop:rooftop@db:5432/rooftop
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      DEVICE_TOKEN: local-device-key
+      LOG_LEVEL: INFO
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://rooftop:rooftop@db:5432/rooftop
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      API_KEY: local-dev-key
+      ADMIN_API_KEY: local-admin-key
+      CORS_ORIGINS: http://localhost:8000,http://localhost:3000
+      LOG_LEVEL: INFO
+      STALE_AFTER_MINUTES: "120"
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+  worker:
+    build: .
+    command: python -m serve.worker
+    environment:
+      DATABASE_URL: postgresql://rooftop:rooftop@db:5432/rooftop
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MQTT_URL: ""
+      LOG_LEVEL: INFO
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+  caddy:
+    image: caddy:2
+    profiles: ["vm"]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - api
+
+volumes:
+  db-data:
+  mlflow-data:
+  caddy-data:
+  caddy-config:

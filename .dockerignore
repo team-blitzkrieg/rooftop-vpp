@@ -1,0 +1,13 @@
+.git
+.venv
+venv
+**/__pycache__
+.pytest_cache
+data/raw
+data/processed
+forecasting/models
+mlruns
+mlflow.db
+*.md
+!README.md
+.env
