@@ -1,0 +1,13 @@
+# Forecasting pipeline and bulky datasets (not needed for the static dashboard).
+data/raw/
+data/processed/
+forecasting/models/
+
+# Local Python env and caches
+.venv/
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+.mypy_cache/
+
+# Note: docs/data/ is intentionally NOT ignored — it ships with the site.

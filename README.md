@@ -138,3 +138,23 @@ python scripts/export_github_pages.py --with-demo-train
 ```
 
 The org must enable Pages for this repository: **Settings → Pages → Build and deployment → Source: GitHub Actions**. Pushes to `main` and manual workflow runs rebuild the site via `.github/workflows/github-pages.yml`.
+
+## Deploy on Vercel
+
+The same static dashboard under `docs/` can be deployed on [Vercel](https://vercel.com) without running Python in the cloud build. Production uses the committed `docs/data/` JSON (same as a zero-build GitHub Pages export). Vercel works with a **private** GitHub repo on the Hobby plan.
+
+1. Import **team-blitzkrieg/rooftop-vpp** in the Vercel dashboard (New Project → connect GitHub).
+2. Leave **Root Directory** as `.` (repository root).
+3. Framework preset: **Other** (no framework). Vercel reads `vercel.json` at the repo root: `outputDirectory` is `docs`, and install/build commands are empty.
+4. Deploy. The live URL is `https://<project-name>.vercel.app` (preview URLs on other branches use the same pattern).
+
+To refresh demo forecast data before a deploy:
+
+```bash
+python scripts/export_github_pages.py --with-demo-train
+git add docs/data
+git commit -m "Refresh static dashboard data"
+git push
+```
+
+Optional (advanced): if the team later wants Vercel to regenerate `docs/data` on every push, set **Build Command** in the Vercel project settings (or in `vercel.json`) to `python scripts/export_github_pages.py --with-demo-train` and **Install Command** to `pip install -r requirements.txt`, with Python 3.12. LightGBM and large training deps can be slow or fragile on Vercel builders; the recommended path is local export + commit, as for GitHub Pages.
