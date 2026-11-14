@@ -24,6 +24,12 @@ Streamlit cannot run on `github.io` (static hosting only). The same metrics and 
 
 Source lives under `docs/` in the repo root. Regenerate `docs/data/` with `python scripts/export_github_pages.py` (add `--with-demo-train` for a short synthetic model). See the root README **GitHub Pages** section.
 
+### Deploy on Vercel
+
+The static PV forecast page is Vercel-ready via root `vercel.json` (`outputDirectory`: `docs`, no cloud build). Connect the GitHub repo at [vercel.com](https://vercel.com), root directory `.`, framework **Other/None**. Private repos work on Vercel Hobby. After connect, pushes deploy to `https://<project-name>.vercel.app`.
+
+Refresh `docs/data` locally (see export command above), commit, and push — same workflow as GitHub Pages. Optionally enable a Vercel build command to run the export script on deploy only if you accept Python/LightGBM on the builder; see root README **Deploy on Vercel**.
+
 ### Run locally
 
 From the **repo root**, with the project virtual environment activated and dependencies installed:
