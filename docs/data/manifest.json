@@ -1,0 +1,82 @@
+{
+  "project": "Rooftops to Power Plant",
+  "generated_for": "github_pages",
+  "repo_root_note": "Paths in experiment JSON may point at local training dirs; static UI uses docs/data only.",
+  "timezone": "Asia/Colombo",
+  "data_label": "SIMULATED",
+  "controls_equipment": false,
+  "disclaimer": "SIMULATED data for the Sri Lanka pilot. Issue time is midnight Asia/Colombo. Forecasts are for scheduling visibility only \u2014 not inverter control.",
+  "sites": [
+    {
+      "site_id": "home-dehiwala",
+      "name": "Dehiwala",
+      "location_id": "colombo",
+      "system_kw": 5.0,
+      "tilt_deg": 10,
+      "azimuth_deg": 180,
+      "latitude": 6.851,
+      "longitude": 79.865,
+      "timezone": "Asia/Colombo"
+    },
+    {
+      "site_id": "home-nugegoda",
+      "name": "Nugegoda",
+      "location_id": "colombo",
+      "system_kw": 3.0,
+      "tilt_deg": 8,
+      "azimuth_deg": 90,
+      "latitude": 6.8649,
+      "longitude": 79.8997,
+      "timezone": "Asia/Colombo"
+    },
+    {
+      "site_id": "home-moratuwa",
+      "name": "Moratuwa",
+      "location_id": "colombo",
+      "system_kw": 10.0,
+      "tilt_deg": 12,
+      "azimuth_deg": 180,
+      "latitude": 6.773,
+      "longitude": 79.8816,
+      "timezone": "Asia/Colombo"
+    }
+  ],
+  "model_versions": [
+    "pv-lgbm-20261114T052344Z"
+  ],
+  "latest_model_version": "pv-lgbm-20261114T052344Z",
+  "overview": {
+    "test_mae_lightgbm_kw": 0.05765138888888889,
+    "test_mae_baseline_kw": 0.08060713394545393,
+    "lightgbm_beats_baseline_on_test_mae": true,
+    "forecast_csv_files": 12
+  },
+  "forecast_days_by_version": {
+    "pv-lgbm-20261114T052344Z": {
+      "home-dehiwala": [
+        "2024-06-18",
+        "2024-06-19",
+        "2024-06-20",
+        "2024-06-21"
+      ],
+      "home-nugegoda": [
+        "2024-06-18",
+        "2024-06-19",
+        "2024-06-20",
+        "2024-06-21"
+      ],
+      "home-moratuwa": [
+        "2024-06-18",
+        "2024-06-19",
+        "2024-06-20",
+        "2024-06-21"
+      ]
+    }
+  },
+  "forecast_file_counts": {
+    "pv-lgbm-20261114T052344Z": 12
+  },
+  "experiment_markdown_available": {
+    "pv-lgbm-20261114T052344Z": true
+  }
+}
