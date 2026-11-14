@@ -41,6 +41,15 @@ def load_sites(path: Path) -> pd.DataFrame:
         zones = out["timezone"].dropna().astype(str)
         if (zones != TIMEZONE).any():
             raise ValueError(f"Only {TIMEZONE} is supported")
+    if "has_meter" in out.columns:
+        out["has_meter"] = _flag_column(out, "has_meter")
+    else:
+        out["has_meter"] = True
+    if "demand_scale_kw" in out.columns:
+        out["demand_scale_kw"] = pd.to_numeric(out["demand_scale_kw"])
+        bad = out["demand_scale_kw"].notna() & (out["demand_scale_kw"] <= 0)
+        if bad.any():
+            raise ValueError("demand_scale_kw, when set, must be positive")
     return out.reset_index(drop=True)
 
 
@@ -62,24 +71,76 @@ def load_readings(path: Path) -> pd.DataFrame:
 
 def _read_readings_file(path: Path) -> pd.DataFrame:
     frame = pd.read_csv(path)
-    missing = [column for column in READING_COLUMNS if column not in frame.columns]
-    if missing:
-        raise ValueError(f"{path} is missing columns: {', '.join(missing)}")
+    if "site_id" not in frame.columns or "timestamp" not in frame.columns:
+        raise ValueError(f"{path} needs site_id and timestamp")
+    power_cols = [column for column in ("pv_kw", "consumption_kw", "import_kw", "export_kw") if column in frame.columns]
+    if not power_cols:
+        raise ValueError(
+            f"{path} needs pv_kw, or consumption_kw, or import_kw and export_kw"
+        )
     out = pd.DataFrame(
         {
             "site_id": frame["site_id"].astype(str),
             "timestamp": to_colombo(frame["timestamp"]),
-            "pv_kw": pd.to_numeric(frame["pv_kw"]),
         }
     )
-    if (~np.isfinite(out["pv_kw"])).any() or (out["pv_kw"] < 0).any():
-        raise ValueError(f"{path} has a missing or negative pv_kw")
+    for column in power_cols:
+        out[column] = pd.to_numeric(frame[column])
+        if column != "consumption_kw" and ((~np.isfinite(out[column])).any() or (out[column] < 0).any()):
+            raise ValueError(f"{path} has a missing or negative {column}")
+    if "consumption_kw" in out.columns:
+        present = out["consumption_kw"].notna()
+        if present.any() and (out.loc[present, "consumption_kw"] < 0).any():
+            raise ValueError(f"{path} has a negative consumption_kw")
     out["is_simulated"] = _flag_column(frame, "is_simulated")
     if "data_label" in frame.columns:
         out["data_label"] = frame["data_label"].astype(str)
     else:
         out["data_label"] = np.where(out["is_simulated"], "SIMULATED", "MEASURED")
     return out
+
+
+def with_consumption(readings: pd.DataFrame, sites: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
+    """Keep homes that have a consumption meter. Return skip messages for the rest.
+
+    `consumption_kw` is used as given. If it is absent, household use is
+    `pv_kw + import_kw - export_kw` when those three columns exist. A site with
+    `has_meter` false, or with neither form, is left out.
+    """
+    sites = sites.copy()
+    sites["site_id"] = sites["site_id"].astype(str)
+    meter = dict(zip(sites["site_id"], sites["has_meter"].astype(bool) if "has_meter" in sites.columns else [True] * len(sites)))
+    messages: list[str] = []
+    kept: list[pd.DataFrame] = []
+    work = readings.copy()
+    work["site_id"] = work["site_id"].astype(str)
+    for site_id, group in work.groupby("site_id", sort=True):
+        if not meter.get(str(site_id), True):
+            messages.append(f"Skipping {site_id}: no consumption meter.")
+            continue
+        piece = group.copy()
+        if "consumption_kw" in piece.columns and piece["consumption_kw"].notna().any():
+            if piece["consumption_kw"].isna().any():
+                messages.append(f"Skipping {site_id}: consumption_kw is missing on some rows.")
+                continue
+        elif {"pv_kw", "import_kw", "export_kw"}.issubset(piece.columns):
+            derived = piece["pv_kw"] + piece["import_kw"] - piece["export_kw"]
+            piece["consumption_kw"] = np.clip(derived.to_numpy(dtype=float), 0.0, None)
+            messages.append(
+                f"{site_id}: consumption_kw derived as pv_kw + import_kw - export_kw."
+            )
+        else:
+            messages.append(
+                f"Skipping {site_id}: no consumption_kw, and no import_kw with export_kw "
+                "to derive household use (pv_kw + import_kw - export_kw)."
+            )
+            continue
+        kept.append(piece)
+    if not kept:
+        detail = " ".join(messages) if messages else "No readings."
+        raise ValueError(f"No home has a consumption meter. {detail}")
+    out = pd.concat(kept, ignore_index=True)
+    return out.sort_values(["site_id", "timestamp"]).reset_index(drop=True), messages
 
 
 def load_weather_table(path: Path) -> pd.DataFrame:
@@ -100,6 +161,8 @@ def load_weather_table(path: Path) -> pd.DataFrame:
         out["data_label"] = frame["data_label"].astype(str)
     else:
         out["data_label"] = np.where(out["is_simulated"], "SIMULATED", "MEASURED")
+    if "demand_temp_c" in frame.columns:
+        out["demand_temp_c"] = pd.to_numeric(frame["demand_temp_c"], errors="coerce")
     if "weather_kind" in frame.columns:
         out["weather_kind"] = frame["weather_kind"].astype(str)
     return out

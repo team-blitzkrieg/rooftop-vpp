@@ -79,6 +79,26 @@ SITE_COLUMNS = [
 
 READING_COLUMNS = ["site_id", "timestamp", "pv_kw"]
 
+# Household demand. The model predicts kW, not a fraction of the PV nameplate.
+# demand_scale_kw is site metadata (a typical peak), known before issue time.
+DEMAND_FEATURE_COLUMNS = [
+    "hour",
+    "day_of_year",
+    "day_of_week",
+    "is_weekend",
+    "is_holiday",
+    "temp_c",
+    "lag_24h_kw",
+    "lag_168h_kw",
+    "recent_kw",
+    "demand_scale_kw",
+]
+# Last 4 weeks. Weekday hours are averaged with weekdays, weekend with weekend.
+DEMAND_LOOKBACK_DAYS = 28
+# Timestamps from 18:30 inclusive to 22:00 exclusive, Asia/Colombo.
+EVENING_START_MINUTE = 18 * 60 + 30
+EVENING_END_MINUTE = 22 * 60
+
 OPEN_METEO_FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 OPEN_METEO_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 OPEN_METEO_VARIABLES = [

@@ -128,6 +128,61 @@ def baseline_power(
     return values
 
 
+def similar_day_baseline(
+    frame: pd.DataFrame,
+    *,
+    value_column: str = "consumption_kw",
+    lookback_days: int = 28,
+) -> pd.Series:
+    """Mean of the same clock time on weekdays, or on weekends, over the lookback.
+
+    Only readings strictly before the row's issue time are used. A public
+    holiday is not its own class: a Poya on Monday stays with the weekdays.
+    The result is never negative. Hours with no history are missing.
+    """
+    if lookback_days < 1:
+        raise ValueError("lookback_days must be at least 1")
+    if value_column not in frame.columns:
+        raise ValueError(f"No {value_column} column to average")
+    values = pd.Series(np.nan, index=frame.index, dtype=float)
+    lookback = pd.Timedelta(days=lookback_days)
+    for _, group in frame.groupby("site_id", sort=False):
+        values.loc[group.index] = _similar_day_one_site(group, value_column, lookback)
+    return values.clip(lower=0.0)
+
+
+def _similar_day_one_site(
+    group: pd.DataFrame,
+    value_column: str,
+    lookback: pd.Timedelta,
+) -> np.ndarray:
+    local = group["timestamp"].dt.tz_convert(TIMEZONE)
+    issued = group["issued_at"]
+    if issued.dt.tz is None:
+        issued = issued.dt.tz_localize(TIMEZONE)
+    minute = (local.dt.hour * 60 + local.dt.minute).to_numpy()
+    weekend = (local.dt.day_of_week >= 5).to_numpy()
+    stamps = local
+    load = group[value_column].to_numpy(dtype=float)
+    issued_at = issued.dt.tz_convert(TIMEZONE)
+    out = np.full(len(group), np.nan)
+    buckets: dict[tuple[int, bool], list[int]] = {}
+    for index, key in enumerate(zip(minute.tolist(), weekend.tolist())):
+        buckets.setdefault((int(key[0]), bool(key[1])), []).append(index)
+    for indexes in buckets.values():
+        bucket_time = stamps.iloc[indexes]
+        bucket_value = load[indexes]
+        bucket_issue = issued_at.iloc[indexes]
+        for position, index in enumerate(indexes):
+            window_start = bucket_issue.iloc[position] - lookback
+            chosen = (bucket_time < bucket_issue.iloc[position]) & (bucket_time >= window_start)
+            sample = bucket_value[chosen.to_numpy()]
+            sample = sample[np.isfinite(sample)]
+            if len(sample):
+                out[index] = float(np.mean(sample))
+    return out
+
+
 def library_versions() -> dict[str, str]:
     import numpy
     import pandas

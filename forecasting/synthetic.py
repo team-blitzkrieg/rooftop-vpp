@@ -12,6 +12,7 @@ to see. The exact driving weather is not saved.
 
 from __future__ import annotations
 
+import zlib
 from datetime import date, datetime
 
 import numpy as np
@@ -53,7 +54,7 @@ def generate_simulated(
     weather_parts = []
     ordered = sites.sort_values("site_id")
     for site in ordered.itertuples(index=False):
-        reading, weather = _one_site(site, index, rng)
+        reading, weather = _one_site(site, index, rng, seed=seed)
         readings_parts.append(reading)
         weather_parts.append(weather)
     readings = pd.concat(readings_parts, ignore_index=True)
@@ -72,7 +73,7 @@ def _index(start: date, end: date, resolution: str) -> pd.DatetimeIndex:
     )
 
 
-def _one_site(site, index: pd.DatetimeIndex, rng: np.random.Generator):
+def _one_site(site, index: pd.DatetimeIndex, rng: np.random.Generator, *, seed: int):
     latitude = float(site.latitude)
     longitude = float(site.longitude)
     system_kw = float(site.system_kw)
@@ -123,11 +124,15 @@ def _one_site(site, index: pd.DatetimeIndex, rng: np.random.Generator):
     temp_fc = np.round(temp + rng.normal(0.0, 0.6, size=len(index)), 2)
 
     site_id = str(site.site_id)
+    # Own generator so the PV draws above stay put.
+    demand_rng = np.random.default_rng((int(seed) * 1000003) ^ (zlib.adler32(site_id.encode()) & 0xFFFFFFFF))
+    consumption, demand_temp = _household_kw(site, index, temp, demand_rng)
     readings = pd.DataFrame(
         {
             "site_id": site_id,
             "timestamp": index,
             "pv_kw": power,
+            "consumption_kw": consumption,
             "is_simulated": True,
             "data_label": "SIMULATED",
         }
@@ -141,9 +146,64 @@ def _one_site(site, index: pd.DatetimeIndex, rng: np.random.Generator):
             "dhi_wm2": dhi_fc,
             "cloud_cover_pct": cloud_fc,
             "temp_c": temp_fc,
+            "demand_temp_c": demand_temp,
             "is_simulated": True,
             "data_label": "SIMULATED",
             "weather_kind": "forecast",
         }
     )
     return readings, weather
+
+
+def _household_kw(site, index: pd.DatetimeIndex, air_temp: np.ndarray, rng: np.random.Generator):
+    """SIMULATED household kW. Not a meter.
+
+    Weekdays have a morning peak near 07:00 and an evening peak near 20:00
+    (inside 18:30–22:00). Weekends and 2024 public holidays, including Poya,
+    move the morning later and keep the evening. A hot day adds fan or AC load.
+    The returned temperature is a noisy forecast of that day's air temperature,
+    which is what the demand model is allowed to see.
+    """
+    from forecasting.calendar import is_holiday
+
+    n = len(index)
+    has_meter = True
+    if hasattr(site, "has_meter") and pd.notna(site.has_meter):
+        has_meter = bool(site.has_meter)
+    if not has_meter:
+        return np.full(n, np.nan), np.full(n, np.nan)
+
+    scale = 1.0
+    if hasattr(site, "demand_scale_kw") and pd.notna(site.demand_scale_kw):
+        scale = float(site.demand_scale_kw)
+    local = index.tz_convert(TIMEZONE)
+    hour = local.hour.to_numpy(dtype=float) + local.minute.to_numpy(dtype=float) / 60.0
+    weekend = local.day_of_week.to_numpy() >= 5
+    holiday = np.array([is_holiday(day) for day in local.date], dtype=bool)
+    off = weekend | holiday
+    day_code, _ = pd.factorize(local.normalize(), sort=True)
+    n_days = int(day_code.max()) + 1
+    # A hot or cool spell, shared by the whole local day. The PV temperature
+    # series is left alone.
+    anomaly = rng.normal(0.0, 1.5, size=n_days)
+    house_temp = np.asarray(air_temp, dtype=float) + anomaly[day_code]
+    forecast_temp = np.round(house_temp + rng.normal(0.0, 0.5, size=n), 2)
+
+    shape = np.where(
+        off,
+        0.22
+        + _bump(hour, 9.5, 1.6, 0.45)
+        + _bump(hour, 14.0, 2.0, 0.20)
+        + _bump(hour, 20.0, 1.3, 1.05),
+        0.18 + _bump(hour, 7.0, 1.1, 0.55) + _bump(hour, 20.0, 1.2, 0.95),
+    )
+    cooling = np.clip(house_temp - 26.0, 0.0, None) * 0.06
+    daily = rng.uniform(0.92, 1.08, size=n_days)
+    load = scale * (shape + cooling) * daily[day_code]
+    load = load + rng.normal(0.0, 0.03 * scale, size=n)
+    load = np.clip(load, 0.0, None)
+    return np.round(load, 4), forecast_temp
+
+
+def _bump(hour: np.ndarray, center: float, width: float, amplitude: float) -> np.ndarray:
+    return amplitude * np.exp(-0.5 * ((hour - center) / width) ** 2)
