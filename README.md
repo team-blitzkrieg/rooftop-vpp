@@ -137,4 +137,13 @@ To refresh artefacts locally from the repo root:
 python scripts/export_github_pages.py --with-demo-train
 ```
 
-The org must enable Pages for this repository: **Settings → Pages → Build and deployment → Source: GitHub Actions**. Pushes to `main` and manual workflow runs rebuild the site via `.github/workflows/github-pages.yml`.
+Pushes to `main` and manual workflow runs rebuild the site via `.github/workflows/github-pages.yml`.
+
+### Troubleshooting Pages deploy failures
+
+If the workflow fails at **Configure GitHub Pages** with `Get Pages site failed - Not Found` (or `has_pages` is false), Pages is not enabled for this repository yet.
+
+1. **Enable Pages (repo admin):** **Settings → Pages → Build and deployment → Source: GitHub Actions**. On the free GitHub plan, Pages for **private** repositories is not available unless the org uses **GitHub Enterprise**—make the repository **public** or upgrade.
+2. **Workflow permissions:** **Settings → Actions → General → Workflow permissions → Read and write permissions** (required for the Pages artifact upload).
+3. **Re-run:** open **Actions**, select **GitHub Pages**, and **Re-run all jobs** after changing settings.
+4. **Private repo on free org:** use [Cloudflare Pages](https://developers.cloudflare.com/pages/) (or similar) to host the `docs/` output, or make the repository public so GitHub Pages can serve it.

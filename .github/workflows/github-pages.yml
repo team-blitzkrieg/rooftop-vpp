@@ -6,8 +6,9 @@ on:
       - main
   workflow_dispatch:
 
+# upload-pages-artifact writes Pages artifacts; configure-pages may create the site when policy allows.
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -36,8 +37,12 @@ jobs:
       - name: Export static dashboard data
         run: python scripts/export_github_pages.py --with-demo-train
 
+      # For private org repos, a repo admin may need Settings → Pages → Build and deployment → Source: GitHub Actions
+      # before this step succeeds. GitHub Pages on private repositories requires a public repo or GitHub Enterprise.
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
