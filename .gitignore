@@ -54,6 +54,9 @@ Desktop.ini
 *.bst
 models/
 checkpoints/
+mlruns/
+mlflow.db
+*.sqlite
 
 # Private pilot data. Anything dropped straight into raw/ or processed/
 # stays ignored, so an inverter log is not committed by mistake.
