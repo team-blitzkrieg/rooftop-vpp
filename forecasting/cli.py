@@ -20,7 +20,7 @@ import pandas as pd
 import requests
 
 from data.pipeline.tables import parse_date
-from forecasting.baseline import baseline_power
+from forecasting.baseline import baseline_power, similar_day_baseline
 from forecasting.config import (
     BASELINE_LOSS_FACTOR,
     DEFAULT_N_ESTIMATORS,
@@ -36,7 +36,13 @@ from forecasting.config import (
 from forecasting.features import build_frame, infer_resolution
 from forecasting.model import format_report, predict_kw, train_and_evaluate, write_forecasts
 from forecasting.synthetic import generate_simulated
-from forecasting.tables import load_readings, load_sites, load_weather_table, write_table
+from forecasting.tables import (
+    load_readings,
+    load_sites,
+    load_weather_table,
+    with_consumption,
+    write_table,
+)
 from forecasting.weather import fetch_weather
 
 
@@ -55,9 +61,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Fit LightGBM, score it against the physics baseline, write forecasts.",
     )
     train.add_argument(
+        "--target",
+        choices=["pv", "demand"],
+        default="pv",
+        help="pv is rooftop AC power. demand is household consumption_kw. Default %(default)s.",
+    )
+    train.add_argument(
         "--synthetic",
         action="store_true",
-        help="Build a SIMULATED series (clear-sky times a cloud factor, plus noise) and train on that.",
+        help="Build a SIMULATED series and train on that. Demand uses a household schedule, not a meter.",
     )
     train.add_argument("--start", default=DEFAULT_SYNTHETIC_START, help="First day, YYYY-MM-DD. Default %(default)s.")
     train.add_argument("--end", default=DEFAULT_SYNTHETIC_END, help="Last day, YYYY-MM-DD, inclusive. Default %(default)s.")
@@ -78,6 +90,12 @@ def build_parser() -> argparse.ArgumentParser:
     forecast = sub.add_parser(
         "forecast",
         help="Write one site's next 24 hours from a saved model.",
+    )
+    forecast.add_argument(
+        "--target",
+        choices=["pv", "demand"],
+        default=None,
+        help="Defaults to the target stored with the model.",
     )
     forecast.add_argument("--model", type=Path, required=True, help="Version directory from train.")
     forecast.add_argument("--site", required=True, help="site_id.")
@@ -132,7 +150,11 @@ def cmd_train(args: argparse.Namespace) -> None:
         sites = load_sites(args.sites)
         readings = load_readings(args.readings)
         weather = load_weather_table(args.weather)
-    frame = build_frame(readings, sites, weather)
+    if args.target == "demand":
+        readings, messages = with_consumption(readings, sites)
+        for message in messages:
+            print(message, flush=True)
+    frame = build_frame(readings, sites, weather, target=args.target)
     params = {}
     if args.learning_rate is not None:
         params["learning_rate"] = args.learning_rate
@@ -147,6 +169,7 @@ def cmd_train(args: argparse.Namespace) -> None:
         params=params or None,
         loss_factor=args.loss_factor,
         seed=args.seed,
+        target=args.target,
     )
     print(format_report(record), end="", flush=True)
 
@@ -156,7 +179,11 @@ def cmd_forecast(args: argparse.Namespace) -> None:
     experiment = json.loads((model_dir / "experiment.json").read_text(encoding="utf-8"))
     version = experiment["model_version"]
     resolution = experiment["data_window"]["resolution"]
-    loss_factor = float(experiment["baseline"]["loss_factor"])
+    target = args.target or experiment.get("forecast_target", "pv")
+    feature_file = model_dir / "features.json"
+    feature_columns = json.loads(feature_file.read_text(encoding="utf-8")) if feature_file.exists() else None
+    raw_loss = experiment["baseline"].get("loss_factor")
+    loss_factor = float(raw_loss) if raw_loss is not None else BASELINE_LOSS_FACTOR
     booster = lgb.Booster(model_file=str(model_dir / "model.txt"))
     sites = load_sites(args.sites)
     sites = sites.loc[sites["site_id"] == args.site].copy()
@@ -168,26 +195,34 @@ def cmd_forecast(args: argparse.Namespace) -> None:
     readings = readings.loc[readings["site_id"] == args.site].copy()
     if readings.empty:
         raise ValueError(f"No readings for {args.site}")
+    if target == "demand":
+        readings, messages = with_consumption(readings, sites)
+        for message in messages:
+            print(message, flush=True)
     weather = load_weather_table(args.weather)
     if "site_id" in weather.columns:
         weather = weather.loc[weather["site_id"] == args.site].copy()
         if weather.empty:
             raise ValueError(f"No weather rows for {args.site}")
-    frame = build_frame(readings, sites, weather)
+    frame = build_frame(readings, sites, weather, target=target)
+    if target == "demand":
+        frame["baseline_kw"] = similar_day_baseline(frame).to_numpy()
     day_frame = frame.loc[frame["issued_at"] == issued].copy()
     if day_frame.empty:
         raise ValueError(f"No joined rows for {args.site} on {args.date}")
     seen = infer_resolution(day_frame)
     if seen != resolution:
         raise ValueError(f"The saved model is {resolution} and these timestamps are {seen}.")
-    day_frame["baseline_kw"] = baseline_power(day_frame, loss_factor).to_numpy()
-    predicted = predict_kw(booster, day_frame)
+    if target == "pv":
+        day_frame["baseline_kw"] = baseline_power(day_frame, loss_factor).to_numpy()
+    predicted = predict_kw(booster, day_frame, feature_columns=feature_columns, target=target)
     root = write_forecasts(
         day_frame,
         predicted,
         version=version,
         forecast_dir=args.forecast_dir,
         resolution=resolution,
+        target=target,
     )
     label = "SIMULATED" if bool(day_frame["is_simulated"].any()) else "MEASURED"
     print(

@@ -10,7 +10,7 @@ One LightGBM model is trained on `pv_kw / system_kw`, so a 3 kW roof and a 10 kW
 
 Issue time is midnight in Asia/Colombo. The file covers that local day, hourly or every 15 minutes. Features are the clock, the day of year, solar position, forecast irradiance and cloud, temperature, system size, tilt, azimuth, and lagged output from before midnight. Same-day readings are not features.
 
-There is no household-demand model here.
+Household demand is the same CLI with `--target demand`. It predicts `consumption_kw` in kW, not a fraction of the PV nameplate. Homes with `has_meter` false are skipped and named in the log. The baseline is the average of that clock time on weekdays, or on weekends, over the previous 28 days. A public holiday stays in its weekday or weekend class. The model also sees a holiday flag and the temperature forecast. `net_kw` is the demand forecast minus the PV physics baseline.
 
 ## Run it
 
@@ -18,6 +18,7 @@ From the repository root, with the virtual environment from the main README:
 
 ```bash
 python -m forecasting train --synthetic
+python -m forecasting train --target demand --synthetic
 ```
 
 That builds a SIMULATED series, trains, prints baseline against LightGBM (MAE, RMSE, nMAE) on the test days, and writes:
@@ -84,7 +85,7 @@ python -m forecasting forecast \
 python -m pytest
 ```
 
-The forecast tests do not call the network. They check the chronological split, that features ignore the issue day's own output, that the baseline is zero at night and never above the nameplate, and a short train on synthetic data.
+The forecast tests do not call the network. They check the chronological split, that features ignore the issue day's own output, that the baseline is zero at night and never above the nameplate, and a short train on synthetic data. Demand tests check leakage, a non-negative similar-day baseline, a skipped home with no meter, and a short `--target demand` train. API tests use an in-memory store.
 
 ## How the pieces work
 
@@ -100,7 +101,7 @@ Training, validation and test are whole issue-days in time order. About 70% trai
 - Real inverter logs are not in this repository. The edge unit is not wired up, and nothing here controls it.
 - One issue a day, at midnight, for the next 24 hours. Not a new forecast every few minutes.
 - Lags are missing for the first day or two, and whenever the readings do not go back before midnight. LightGBM accepts that missing value.
-- Household demand is not modelled.
+- Demand is a schedule plus noise until a meter log exists. Beating the similar-day average on that series is not a result about a Colombo household. If LightGBM does not beat it, the report says so.
 - Open-Meteo 15-minute data outside Europe and North America is interpolated from hourly data. The historical archive path here is hourly only.
 - The baseline is not the PVWatts series in `data/processed/pv_simulated/`. Do not mix the two up when quoting an error.
 - No search over LightGBM parameters. `num_threads` is 1 so a rerun is closer to repeatable.

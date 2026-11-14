@@ -13,7 +13,8 @@ import numpy as np
 import pandas as pd
 
 from forecasting.baseline import solar_position
-from forecasting.config import FEATURE_COLUMNS, TIMEZONE, WEATHER_COLUMNS
+from forecasting.calendar import holiday_flag
+from forecasting.config import DEMAND_FEATURE_COLUMNS, FEATURE_COLUMNS, TIMEZONE, WEATHER_COLUMNS
 from forecasting.split import LeakageError
 from forecasting.tables import align_weather
 
@@ -22,9 +23,16 @@ def build_frame(
     readings: pd.DataFrame,
     sites: pd.DataFrame,
     weather: pd.DataFrame,
+    *,
+    target: str = "pv",
 ) -> pd.DataFrame:
+    if target not in {"pv", "demand"}:
+        raise ValueError("target must be 'pv' or 'demand'")
     if readings.empty or weather.empty:
         raise ValueError("Readings and weather are both required")
+    value_column = "pv_kw" if target == "pv" else "consumption_kw"
+    if value_column not in readings.columns:
+        raise ValueError(f"Readings have no {value_column} column")
     sites = sites.copy()
     sites["site_id"] = sites["site_id"].astype(str)
     readings = readings.copy()
@@ -39,13 +47,13 @@ def build_frame(
     geometry = [column for column in ("system_kw", "tilt_deg", "azimuth_deg", "latitude", "longitude") if column in readings.columns]
     readings = readings.drop(columns=geometry)
     site_keep = ["site_id", "system_kw", "tilt_deg", "azimuth_deg", "latitude", "longitude"]
-    for optional in ("name", "location_id"):
+    for optional in ("name", "location_id", "has_meter", "demand_scale_kw"):
         if optional in sites.columns:
             site_keep.append(optional)
     frame = readings.merge(sites[site_keep], on="site_id", how="left")
 
     weather_keep = ["site_id", "timestamp", *WEATHER_COLUMNS]
-    for optional in ("is_simulated", "data_label", "weather_kind"):
+    for optional in ("is_simulated", "data_label", "weather_kind", "demand_temp_c"):
         if optional in weather.columns:
             weather_keep.append(optional)
     weather_use = weather[weather_keep].drop_duplicates(["site_id", "timestamp"], keep="last")
@@ -67,29 +75,48 @@ def build_frame(
     frame["issued_at"] = local.dt.normalize()
     frame["hour"] = local.dt.hour + local.dt.minute / 60.0
     frame["day_of_year"] = local.dt.day_of_year.astype(int)
-    frame = _add_solar(frame)
-    frame = _add_lags(frame, readings)
-    frame["lag_24h_norm"] = frame["lag_24h_kw"] / frame["system_kw"]
-    frame["lag_48h_norm"] = frame["lag_48h_kw"] / frame["system_kw"]
-    frame["recent_norm"] = frame["recent_kw"] / frame["system_kw"]
+    if target == "pv":
+        frame = _add_solar(frame)
+        frame = _add_lags(frame, readings, "pv_kw", (24, 48))
+        frame["lag_24h_norm"] = frame["lag_24h_kw"] / frame["system_kw"]
+        frame["lag_48h_norm"] = frame["lag_48h_kw"] / frame["system_kw"]
+        frame["recent_norm"] = frame["recent_kw"] / frame["system_kw"]
+        lag_times = ("lag_24h_at", "lag_48h_at", "recent_at")
+        features = FEATURE_COLUMNS
+    else:
+        if "demand_temp_c" in frame.columns:
+            frame["temp_c"] = frame["demand_temp_c"]
+        frame["day_of_week"] = local.dt.day_of_week.astype(int)
+        frame["is_weekend"] = (frame["day_of_week"] >= 5).astype(float)
+        frame["is_holiday"] = holiday_flag(frame["timestamp"]).to_numpy()
+        if "demand_scale_kw" not in frame.columns:
+            frame["demand_scale_kw"] = np.nan
+        frame = _add_lags(frame, readings, "consumption_kw", (24, 168))
+        lag_times = ("lag_24h_at", "lag_168h_at", "recent_at")
+        features = DEMAND_FEATURE_COLUMNS
     frame = frame.sort_values(["site_id", "timestamp"]).reset_index(drop=True)
-    assert_no_target_leakage(frame)
+    assert_no_target_leakage(frame, feature_columns=features, lag_time_columns=lag_times)
     return frame
 
 
-def assert_no_target_leakage(frame: pd.DataFrame) -> None:
+def assert_no_target_leakage(
+    frame: pd.DataFrame,
+    feature_columns: list[str] | None = None,
+    lag_time_columns: tuple[str, ...] | None = None,
+) -> None:
     """Fail if a lag timestamp is at or after the issue, or the horizon is not 24h."""
-    required = ["issued_at", "timestamp", "lag_24h_at", "lag_48h_at", "recent_at"]
+    columns = list(feature_columns or FEATURE_COLUMNS)
+    lag_times = lag_time_columns or ("lag_24h_at", "lag_48h_at", "recent_at")
+    required = ["issued_at", "timestamp", *lag_times]
     missing = [column for column in required if column not in frame.columns]
     if missing:
         raise LeakageError(f"Cannot check leakage, missing {', '.join(missing)}")
-    forbidden = {"pv_kw", "baseline_kw", "lag_24h_kw", "lag_48h_kw", "recent_kw"}
-    if forbidden & set(FEATURE_COLUMNS):
-        raise LeakageError("The model feature list includes the target or a raw lag in kW")
+    if {"pv_kw", "consumption_kw", "baseline_kw"} & set(columns):
+        raise LeakageError("The model feature list includes the target")
     lead = frame["timestamp"] - frame["issued_at"]
     if (lead < pd.Timedelta(0)).any() or (lead >= pd.Timedelta(hours=24)).any():
         raise LeakageError("A row sits outside the 24 hours that start at its issue time")
-    for column in ("lag_24h_at", "lag_48h_at", "recent_at"):
+    for column in lag_times:
         known = frame[column].notna()
         if known.any() and (frame.loc[known, column] >= frame.loc[known, "issued_at"]).any():
             raise LeakageError(f"{column} is not strictly before the issue time")
@@ -131,16 +158,21 @@ def _add_solar(frame: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def _add_lags(frame: pd.DataFrame, readings: pd.DataFrame) -> pd.DataFrame:
-    observed = readings.loc[:, ["site_id", "timestamp", "pv_kw"]].copy()
+def _add_lags(
+    frame: pd.DataFrame,
+    readings: pd.DataFrame,
+    value_column: str,
+    offsets: tuple[int, ...],
+) -> pd.DataFrame:
+    observed = readings.loc[:, ["site_id", "timestamp", value_column]].copy()
     observed["site_id"] = observed["site_id"].astype(str)
     observed["timestamp"] = pd.to_datetime(observed["timestamp"], utc=True).dt.tz_convert(TIMEZONE)
+    observed = observed.rename(columns={value_column: "value_kw"})
     out = frame.copy()
-    for hours, kw_name, at_name in (
-        (24, "lag_24h_kw", "lag_24h_at"),
-        (48, "lag_48h_kw", "lag_48h_at"),
-    ):
-        lookup = observed.rename(columns={"timestamp": at_name, "pv_kw": kw_name})
+    for hours in offsets:
+        kw_name = f"lag_{hours}h_kw"
+        at_name = f"lag_{hours}h_at"
+        lookup = observed.rename(columns={"timestamp": at_name, "value_kw": kw_name})
         out[at_name] = out["timestamp"] - pd.Timedelta(hours=hours)
         out = out.drop(columns=[kw_name], errors="ignore")
         out = out.merge(lookup, on=["site_id", at_name], how="left")
@@ -151,7 +183,7 @@ def _add_lags(frame: pd.DataFrame, readings: pd.DataFrame) -> pd.DataFrame:
     issues = out.loc[:, ["site_id", "issued_at"]].drop_duplicates()
     # merge_asof wants the time key in order across the whole frame, not per site.
     issues = issues.sort_values(["issued_at", "site_id"]).reset_index(drop=True)
-    history = observed.rename(columns={"timestamp": "recent_at", "pv_kw": "recent_kw"})
+    history = observed.rename(columns={"timestamp": "recent_at", "value_kw": "recent_kw"})
     history = history.sort_values(["recent_at", "site_id"]).reset_index(drop=True)
     recent = pd.merge_asof(
         issues,
