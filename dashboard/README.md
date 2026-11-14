@@ -16,6 +16,14 @@ Artifacts are read from paths **relative to the repository root** (same layout a
 | `data/processed/forecasts/pv-lgbm-<timestamp>/<site_id>/<YYYY-MM-DD>.csv` | 24 h forecast rows |
 | `forecasting/sites.example.csv` | Pilot site names and metadata |
 
+### Static site (GitHub Pages)
+
+Streamlit cannot run on `github.io` (static hosting only). The same metrics and forecast curves are published as a static site:
+
+**https://team-blitzkrieg.github.io/rooftop-vpp/**
+
+Source lives under `docs/` in the repo root. Regenerate `docs/data/` with `python scripts/export_github_pages.py` (add `--with-demo-train` for a short synthetic model). See the root README **GitHub Pages** section.
+
 ### Run locally
 
 From the **repo root**, with the project virtual environment activated and dependencies installed:

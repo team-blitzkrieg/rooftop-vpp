@@ -122,3 +122,19 @@ Weather download and the simulated rooftop PV series are in `data/`. See `data/R
 Put pilot inverter logs in `data/raw/`, not inside `weather/` or `live/`. Git ignores loose files there. The weather files and the simulated PV tables are already in the repo.
 
 Branch names and reviews are in `CONTRIBUTING.md`.
+
+## GitHub Pages
+
+A static read-only PV forecast dashboard is published from the `docs/` folder:
+
+**https://team-blitzkrieg.github.io/rooftop-vpp/**
+
+It mirrors the Streamlit tabs (overview, forecast day, model report) using committed JSON under `docs/data/`. Data are **SIMULATED**; issue time is midnight **Asia/Colombo**. The page does not send commands to inverters.
+
+To refresh artefacts locally from the repo root:
+
+```bash
+python scripts/export_github_pages.py --with-demo-train
+```
+
+The org must enable Pages for this repository: **Settings → Pages → Build and deployment → Source: GitHub Actions**. Pushes to `main` and manual workflow runs rebuild the site via `.github/workflows/github-pages.yml`.
