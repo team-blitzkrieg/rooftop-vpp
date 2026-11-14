@@ -117,7 +117,7 @@ pip install -r requirements.txt
 
 On Windows, activate with `.venv\Scripts\activate`.
 
-Weather download and the simulated rooftop PV series are in `data/`. See `data/README.md` for the commands. The forecast models, the Pi code and the dashboard are not written yet. `requirements.txt` is a shared starting set: pandas, NumPy, LightGBM, pandapower, Requests, PyModbus, scikit-learn, Matplotlib, Jupyter, Streamlit, pvlib and pytest.
+Weather download and the simulated rooftop PV series are in `data/`. See `data/README.md` for the commands. The solar forecast is in `forecasting/`. The Pi code and the dashboard are not written yet. `requirements.txt` is a shared starting set: pandas, NumPy, LightGBM, pandapower, Requests, PyModbus, scikit-learn, Matplotlib, Jupyter, Streamlit, pvlib and pytest.
 
 Put pilot inverter logs in `data/raw/`, not inside `weather/` or `live/`. Git ignores loose files there. The weather files and the simulated PV tables are already in the repo.
 
