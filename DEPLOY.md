@@ -62,7 +62,7 @@ The script creates ordinary tables and indexes on `(site_id, timestamp)`. If the
 
 Row level security is on for every table. `anon` may select `forecasts`, `model_versions` and `sites`. It may not select `readings` or `devices`, and it has no insert policy on `readings`.
 
-Copy the pooler URI into the GitHub secret `DATABASE_URL`. Copy the project URL into `SUPABASE_URL`. Copy the service role key into `SUPABASE_SERVICE_ROLE_KEY`. The service role bypasses RLS. It is not the anon key, and it does not belong in the front end.
+Copy the pooler URI into the GitHub secret `DATABASE_URL`. Use the transaction pooler (port 6543). Direct connections are too few for Actions. PgBouncer in transaction mode rejects named prepared statements (`prepared statement "_pg3_0" already exists`). `PostgresStore` opens every psycopg connection with `prepare_threshold=None`, which is what the hourly forecast, the weekly retrain, and Seed demo use. Copy the project URL into `SUPABASE_URL`. Copy the service role key into `SUPABASE_SERVICE_ROLE_KEY`. The service role bypasses RLS. It is not the anon key, and it does not belong in the front end.
 
 In Storage, you can leave the bucket absent. The weekly job creates a private bucket named `models` when those two secrets are set.
 

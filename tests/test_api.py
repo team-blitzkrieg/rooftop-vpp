@@ -161,6 +161,25 @@ def test_reads_can_require_a_key_and_promote_needs_an_admin_key(monkeypatch):
     assert store.promoted_model("demand")["version"] == "demand-lgbm-new"
 
 
+def test_postgres_disables_prepared_statements(monkeypatch):
+    """PgBouncer transaction mode cannot reuse psycopg's named prepares."""
+    seen = {}
+
+    def fake_connect(url, **kwargs):
+        seen["url"] = url
+        seen["kwargs"] = kwargs
+        return object()
+
+    import psycopg
+
+    monkeypatch.setattr(psycopg, "connect", fake_connect)
+    from api.postgres import PostgresStore
+
+    PostgresStore("postgresql://pooler.example:6543/postgres")._connect()
+    assert seen["url"].endswith(":6543/postgres")
+    assert seen["kwargs"]["prepare_threshold"] is None
+
+
 def test_jobs_skip_without_a_database_and_keep_the_promoted_model(monkeypatch, capsys):
     monkeypatch.delenv("DATABASE_URL", raising=False)
     assert main(["forecast"]) == 0
