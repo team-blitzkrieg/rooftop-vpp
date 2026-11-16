@@ -41,6 +41,10 @@ Desktop.ini
 .env.*
 !.env.example
 
+# Next.js app
+web/node_modules/
+web/.next/
+
 # Model artifacts (can be large, and are easy to rebuild)
 *.pkl
 *.pickle

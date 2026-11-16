@@ -116,6 +116,10 @@ Workflows:
 
 The weekly workflow has a manual input, `allow_synthetic`. Leave it false. Turning it on trains on generated rows and can replace the production model. The cron does not set it.
 
+`.github/workflows/seed-demo.yml` is manual only (`workflow_dispatch`, no cron). Actions → Seed demo → Run workflow. It inserts Dehiwala, Nugegoda and Moratuwa into `sites` when those ids are missing, trains PV and demand on the synthetic generator, and writes the next 48 hourly rows for `pv`, `demand` and `net`. Every row has `data_label` `SIMULATED`, `is_simulated` true, and `model_version` `demo`. It does not insert meter readings and it never sets `promoted` on `model_versions`, so the hourly job and the weekly retrain are unchanged. Running it again replaces the previous demo rows.
+
+The page in `web/` reads `sites` and `forecasts` in the browser. It is a separate Vercel project with Root Directory `web`. The repository-root `vercel.json` still skips builds for a project rooted at the repo, which is what keeps the Python tree off Vercel. See `web/README.md`.
+
 The retrain uploads one zip, either to the private Supabase bucket or, if those secrets are empty, as a GitHub Release asset tagged `model-<version>`. The `model_versions` row stores the URL, the metrics and `promoted`. If the upload fails, the row is still written. Local MLflow is not part of this. Anyone who wants it on a laptop can point the MLflow CLI at `forecasting/models`. There is no MLflow server to pay for.
 
 ## 3. Render or Hugging Face
