@@ -17,7 +17,11 @@ class PostgresStore:
     def _connect(self):
         import psycopg
 
-        return psycopg.connect(self.database_url)
+        # Supabase DATABASE_URL is the transaction pooler (port 6543, PgBouncer
+        # transaction mode). Named prepared statements are not safe there:
+        # psycopg would raise DuplicatePreparedStatement for "_pg3_0".
+        # None disables them. Jobs, retrain, and the demo seed all use this.
+        return psycopg.connect(self.database_url, prepare_threshold=None)
 
     def apply_schema(self) -> None:
         sql = SCHEMA_PATH.read_text(encoding="utf-8")
