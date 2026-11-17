@@ -13,7 +13,7 @@ export function MetricCard({
 }: {
   icon: ReactNode;
   label: string;
-  value: string;
+  value: ReactNode;
   caption: string;
   source: SourceBadge | null;
   stale: boolean;

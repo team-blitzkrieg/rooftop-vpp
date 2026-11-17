@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { AppHeader, Frame, RequireDemo, SiteTitle } from "@/components/household/shell";
-import { Segmented } from "@/components/household/ui";
+import { Segmented, useReducedMotion } from "@/components/household/ui";
 import { useHomeData } from "@/components/household/use-home-data";
 import { addDays, dayLabel, hoursForDay, rangeDays, sumHours, todayKey, type HourBar } from "@/lib/household-derive";
 
@@ -12,6 +12,7 @@ type Span = "day" | "week" | "month" | "custom";
 
 export default function HistoryPage() {
   const data = useHomeData();
+  const animate = !useReducedMotion();
   const zone = data.zone;
   const today = todayKey(zone);
   const [span, setSpan] = useState<Span>("day");
@@ -106,9 +107,9 @@ export default function HistoryPage() {
                   <BarChart data={chart}>
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={span === "day" ? 2 : 0} />
                     <YAxis tick={{ fontSize: 10 }} width={28} />
-                    <Bar dataKey="solar" stackId="e" fill="#ff9800" isAnimationActive />
-                    <Bar dataKey="exported" stackId="e" fill="#a280db" isAnimationActive />
-                    <Bar dataKey="imported" stackId="e" fill="#03a9f4" isAnimationActive />
+                    <Bar dataKey="solar" stackId="e" fill="#ff9800" isAnimationActive={animate} animationDuration={800} animationEasing="ease-out" />
+                    <Bar dataKey="exported" stackId="e" fill="#a280db" isAnimationActive={animate} animationDuration={800} animationEasing="ease-out" />
+                    <Bar dataKey="imported" stackId="e" fill="#03a9f4" isAnimationActive={animate} animationDuration={800} animationEasing="ease-out" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

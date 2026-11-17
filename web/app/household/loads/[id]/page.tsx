@@ -74,7 +74,7 @@ export default function EditLoadPage() {
         <AppHeader
           title={creating ? "Add load" : "Edit load"}
           back={{ href: "/household/loads", label: "‹" }}
-          action={<button type="button" className="hh-btn ghost" onClick={() => router.push("/household/loads")}>Cancel</button>}
+          action={<button type="button" className="hh-btn ghost slim" onClick={() => router.push("/household/loads")}>Cancel</button>}
         />
         <div className="hh-main">
           {!creating && demo && !existing ? <p className="hh-note">That load is not on this browser.</p> : null}

@@ -1,5 +1,6 @@
-import { formatPower, type Quantity } from "@/lib/household";
+import type { Quantity } from "@/lib/household";
 import { SourcePill } from "./pills";
+import { CountUp } from "./ui";
 
 function Cell({ dot, label, quantity, unit }: { dot: string; label: string; quantity: Quantity; unit: "kWh" }) {
   return (
@@ -8,7 +9,7 @@ function Cell({ dot, label, quantity, unit }: { dot: string; label: string; quan
         <i className={`hh-swatch ${dot}`} />
         {label}
       </p>
-      <strong>{formatPower(quantity.value, unit)}</strong>
+      <strong><CountUp value={quantity.value} suffix={unit} /></strong>
     </div>
   );
 }

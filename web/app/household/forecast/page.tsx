@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { AppHeader, Frame, RequireDemo } from "@/components/household/shell";
-import { CountUp, Segmented } from "@/components/household/ui";
+import { CountUp, Segmented, useReducedMotion } from "@/components/household/ui";
 import { useHomeData } from "@/components/household/use-home-data";
 import { sourceBadge, zonedParts } from "@/lib/household";
 import { addDays, todayKey } from "@/lib/household-derive";
@@ -14,6 +14,7 @@ type Span = "today" | "tomorrow" | "week";
 
 export default function ForecastPage() {
   const data = useHomeData();
+  const animate = !useReducedMotion();
   const zone = data.zone;
   const today = todayKey(zone);
   const [span, setSpan] = useState<Span>("today");
@@ -73,8 +74,8 @@ export default function ForecastPage() {
                   <LineChart data={points}>
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={span === "week" ? 0 : 2} />
                     <YAxis tick={{ fontSize: 10 }} width={28} />
-                    <Line type="monotone" dataKey="pv" stroke="#ff9800" strokeWidth={2} dot={false} connectNulls={false} isAnimationActive />
-                    <Line type="monotone" dataKey="baseline" stroke="#6b7280" strokeDasharray="4 4" dot={false} connectNulls={false} isAnimationActive />
+                    <Line type="monotone" dataKey="pv" stroke="#ff9800" strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={animate} animationDuration={900} animationEasing="ease-out" />
+                    <Line type="monotone" dataKey="baseline" stroke="#6b7280" strokeDasharray="4 4" dot={false} connectNulls={false} isAnimationActive={animate} animationDuration={900} animationEasing="ease-out" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

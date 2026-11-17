@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { IconShield } from "@/components/household/icons";
 import { AppHeader, Frame, RequireDemo } from "@/components/household/shell";
-import { Button, Modal } from "@/components/household/ui";
+import { Button, Modal, useReducedMotion } from "@/components/household/ui";
 import { useHomeData } from "@/components/household/use-home-data";
 import { updateDemo, useDemo } from "@/lib/demo-store";
 import { buildAlerts, todayKey } from "@/lib/household-derive";
@@ -15,6 +15,7 @@ export default function AlertDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const data = useHomeData();
+  const animate = !useReducedMotion();
   const demo = useDemo();
   const [contact, setContact] = useState(false);
   const alerts = buildAlerts(data.rows ?? [], data.zone);
@@ -68,8 +69,8 @@ export default function AlertDetailPage() {
                       <LineChart data={chart}>
                         <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                         <YAxis tick={{ fontSize: 10 }} width={28} />
-                        <Line dataKey="pv" stroke="#ff9800" dot={false} isAnimationActive />
-                        <Line dataKey="baseline" stroke="#6b7280" strokeDasharray="4 4" dot={false} isAnimationActive />
+                        <Line dataKey="pv" stroke="#ff9800" dot={false} isAnimationActive={animate} animationDuration={900} animationEasing="ease-out" />
+                        <Line dataKey="baseline" stroke="#6b7280" strokeDasharray="4 4" dot={false} isAnimationActive={animate} animationDuration={900} animationEasing="ease-out" />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>

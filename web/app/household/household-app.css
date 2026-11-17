@@ -1,17 +1,24 @@
 .hh-plain { text-decoration: none; color: inherit; display: block; }
-.hh-page { animation: hh-enter 0.35s ease; }
+.hh-route { animation: hh-enter 0.32s ease; }
 
 @keyframes hh-enter {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: none; }
 }
 
-.hh-card, .hh-metric { animation: hh-enter 0.45s ease both; }
-.hh-metrics .hh-metric:nth-child(2) { animation-delay: 0.05s; }
-.hh-metrics .hh-metric:nth-child(3) { animation-delay: 0.1s; }
+.hh-card, .hh-metric { animation: hh-card-in 0.45s ease both; }
+.hh-metrics .hh-metric:nth-child(2),
+.hh-main .hh-card:nth-of-type(2) { animation-delay: 0.06s; }
+.hh-metrics .hh-metric:nth-child(3),
+.hh-main .hh-card:nth-of-type(3) { animation-delay: 0.12s; }
+
+@keyframes hh-card-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
 
 .hh-flow-lines path { fill: none; }
-.hh-flow:not(.off) .hh-flow-lines path {
+.hh-flow:not(.off) .hh-flow-move {
   stroke-dasharray: 7 6;
   animation: hh-dash 1.8s linear infinite;
 }
@@ -31,9 +38,14 @@
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.12s ease, background 0.12s ease;
+  transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
 }
-.hh-btn:active { transform: scale(0.98); }
+.hh-btn:active, .hh-tabs a:active, .hh-seg button:active {
+  transform: scale(0.97);
+}
+.hh-tabs a, .hh-seg button {
+  transition: transform 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
 .hh-btn.primary { background: #0277bd; color: #fff; }
 .hh-btn.secondary { background: #fff; color: #111827; border: 1px solid #e5e7eb; }
 .hh-btn.danger { background: #c62828; color: #fff; }
@@ -109,6 +121,7 @@
   align-items: flex-end;
   justify-content: center;
   z-index: 20;
+  overflow: hidden;
   animation: hh-fade 0.2s ease;
 }
 .hh-sheet, .hh-modal {
@@ -118,14 +131,25 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  animation: hh-rise 0.28s ease;
 }
-.hh-sheet { border-radius: 20px 20px 0 0; }
-.hh-modal { border-radius: 18px; margin: auto 16px; border: 1px solid #e5e7eb; }
+.hh-sheet {
+  border-radius: 20px 20px 0 0;
+  animation: hh-sheet-up 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hh-modal {
+  border-radius: 18px;
+  margin: auto 16px;
+  border: 1px solid #e5e7eb;
+  animation: hh-modal-up 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
 .hh-grab { width: 40px; height: 4px; border-radius: 2px; background: #d1d5db; margin: 0 auto 4px; }
 
 @keyframes hh-fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes hh-rise { from { transform: translateY(16px); opacity: 0.6; } to { transform: none; opacity: 1; } }
+@keyframes hh-sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes hh-modal-up {
+  from { transform: translateY(36px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
 
 .hh-seg { display: flex; background: #e9ebef; border-radius: 10px; padding: 3px; gap: 2px; }
 .hh-seg button {
@@ -210,7 +234,9 @@
 }
 
 .hh-skel { border-radius: 12px; background: linear-gradient(90deg, #eef0f3 25%, #f7f8fa 37%, #eef0f3 63%); background-size: 400% 100%; animation: hh-shimmer 1.2s ease infinite; }
-.hh-skel-card { height: 120px; }
+.hh-skel-stack { display: flex; flex-direction: column; gap: 12px; }
+.hh-skel-card { height: 180px; }
+.hh-skel-metric { height: 108px; flex: 1; min-width: 0; }
 @keyframes hh-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
 
 .hh-table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -226,7 +252,13 @@
 .hh-toggle.on { background: #0277bd; }
 .hh-toggle.on i { left: 19px; }
 
-.hh-split { display: flex; gap: 10px; }
+.hh-hdr .hh-btn { width: auto; height: 36px; padding: 0 12px; }
+.hh-split { display: flex; gap: 10px; min-width: 0; }
+.hh-field { min-width: 0; }
+.hh-input { min-width: 0; max-width: 100%; }
+.hh-input input, .hh-input select { min-width: 0; width: 100%; max-width: 100%; }
+.hh-input input[type="time"]::-webkit-datetime-edit,
+.hh-input input[type="date"]::-webkit-datetime-edit { min-width: 0; padding: 0; }
 .hh-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .hh-stats .hh-card { min-width: 0; }
 .hh-split .hh-field { flex: 1; }
@@ -235,8 +267,9 @@
 .hh-local { font-size: 11px; color: #6b7280; margin: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .hh-page, .hh-card, .hh-metric, .hh-flow-lines path, .hh-sheet, .hh-modal, .hh-scrim, .hh-skel, .hh-btn, .hh-toggle i {
-    animation: none;
-    transition: none;
+  .hh-route, .hh-card, .hh-metric, .hh-flow:not(.off) .hh-flow-move, .hh-sheet, .hh-modal, .hh-scrim, .hh-skel, .hh-btn, .hh-tabs a, .hh-seg button, .hh-toggle i {
+    animation: none !important;
+    transition: none !important;
   }
+  .hh-flow:not(.off) .hh-flow-move { stroke-dasharray: none; }
 }

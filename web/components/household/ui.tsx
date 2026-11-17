@@ -61,6 +61,18 @@ export function Modal({ open, title, onClose, children }: { open: boolean; title
   );
 }
 
+export function useReducedMotion() {
+  const [reduce, setReduce] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => setReduce(media.matches);
+    apply();
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, []);
+  return reduce;
+}
+
 export function CountUp({ value, suffix }: { value: number | null; suffix: string }) {
   const [shown, setShown] = useState(0);
   useEffect(() => {
