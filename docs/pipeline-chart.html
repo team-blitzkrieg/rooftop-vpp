@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline chart</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --card: #ffffff; --line: #e3e3de; --text: #1c1c1a; --sub: #6a6a64;
+    --todo: #d9dbd6; --todo-t: #2b2b28;
+    --doing: #f5c542; --doing-t: #3d2e00;
+    --done: #5cbf7a; --done-t: #0b2d16;
+    --block: #d93025; --block-t: #ffffff;
+    --gate: #2563eb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#161614; --card:#1f1f1c; --line:#33332f; --text:#ececE8; --sub:#a3a39b;
+      --todo:#3b3d38; --todo-t:#ececE8; --doing:#b8901c; --doing-t:#fff7da; --done:#2f8f50; --done-t:#eafff0; --block:#e5483d; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--sub); margin: 0 0 16px; }
+  .legend { display:flex; flex-wrap:wrap; gap:14px; margin: 0 0 14px; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .sw { width:16px; height:12px; border-radius:3px; display:inline-block; }
+  .chart { background:var(--card); border:1px solid var(--line); border-radius:10px; overflow-x:auto; position:relative; }
+  .inner { position:relative; min-width: max-content; }
+  .head { position:sticky; top:0; z-index:5; background:var(--card); border-bottom:1px solid var(--line); height:58px; }
+  .month { position:absolute; top:4px; font-weight:600; font-size:12px; color:var(--sub); }
+  .wk { position:absolute; top:30px; font-size:11px; color:var(--sub); border-left:1px solid var(--line); padding-left:4px; height:28px; }
+  .gridline { position:absolute; top:58px; bottom:0; border-left:1px solid var(--line); opacity:.6; }
+  .gate { position:absolute; top:0; bottom:0; border-left:2px dashed var(--gate); z-index:2; pointer-events:none; }
+  .gate b { position:absolute; top:-1px; left:4px; background:var(--gate); color:#fff; font-size:11px; padding:1px 6px; border-radius:0 0 6px 6px; white-space:nowrap; }
+  .today { position:absolute; top:0; bottom:0; border-left:2px solid #111; z-index:2; pointer-events:none; }
+  .today b { position:absolute; bottom:2px; left:4px; background:#111; color:#fff; font-size:11px; padding:1px 6px; border-radius:6px; }
+  .deadline { position:absolute; top:0; bottom:0; border-left:3px solid var(--block); z-index:2; pointer-events:none; }
+  .deadline b { position:absolute; bottom:2px; right:6px; color:var(--block); font-size:12px; white-space:nowrap; }
+  .lane { position:relative; border-bottom:1px solid var(--line); }
+  .lane:last-child { border-bottom:0; }
+  .lane-label { position:sticky; left:0; z-index:4; width:118px; padding:10px 10px; background:var(--card);
+    border-right:1px solid var(--line); font-weight:600; height:100%; position:absolute; top:0; left:0; }
+  .lane-label small { display:block; font-weight:400; color:var(--sub); font-size:11px; }
+  .bar { position:absolute; height:28px; border-radius:6px; padding:0 8px; display:flex; align-items:center;
+    font-size:12px; white-space:nowrap; overflow:visible; cursor:default; z-index:3; box-shadow:0 1px 0 rgba(0,0,0,.08); }
+  .bar.todo { background:var(--todo); color:var(--todo-t); }
+  .bar.doing { background:var(--doing); color:var(--doing-t); }
+  .bar.done { background:var(--done); color:var(--done-t); }
+  .bar.block { background:var(--block); color:var(--block-t); font-weight:600; outline:2px solid rgba(217,48,37,.25); }
+  .bar:hover { filter:brightness(.95); z-index:10; }
+  h2 { font-size:16px; margin: 28px 0 8px; }
+  table { border-collapse:collapse; width:100%; background:var(--card); border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  th, td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { background:rgba(0,0,0,.03); font-size:12px; color:var(--sub); text-transform:uppercase; letter-spacing:.03em; }
+  tr:last-child td { border-bottom:0; }
+  .tag { display:inline-block; padding:1px 8px; border-radius:10px; font-size:11px; font-weight:600; background:var(--block); color:#fff; }
+  .hint { color:var(--sub); font-size:12px; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Pipeline to the concept paper</h1>
+  <p class="sub">11 Nov to 31 Dec 2026. Each bar is a task, placed by date and by owner. Hover a bar for what "done" means. Source of truth: <code>project-pipeline.md</code>.</p>
+
+  <div class="legend">
+    <span><i class="sw" style="background:var(--block)"></i> Red: major blocker (if late, work after it stops)</span>
+    <span><i class="sw" style="background:var(--doing)"></i> In progress</span>
+    <span><i class="sw" style="background:var(--todo)"></i> Not started</span>
+    <span><i class="sw" style="background:var(--done)"></i> Done</span>
+    <span><i class="sw" style="background:transparent;border-left:2px dashed var(--gate);width:2px"></i> Gate (check the criteria)</span>
+  </div>
+
+  <div class="chart" id="chart"><div class="inner" id="inner"></div></div>
+  <p class="hint">Scroll sideways if the chart is wider than your window. The black line is today.</p>
+
+  <h2>Red blockers: what breaks if they slip</h2>
+  <table>
+    <thead><tr><th>Task</th><th>Due</th><th>If it slips</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag">D2</span> Pilot home facts</td><td>Sat 14 Nov</td><td>Tatiana cannot choose parts. We do not know which inverter to support.</td></tr>
+      <tr><td><span class="tag">R1</span> Interviews (3 or more)</td><td>Fri 27 Nov</td><td>We do not know the pilot approval path or the real inverter mix. Gate 1 fails.</td></tr>
+      <tr><td><span class="tag">R4</span> Tariff table, verified</td><td>Fri 20 Nov</td><td>The scheduler and savings report have no verified numbers.</td></tr>
+      <tr><td><span class="tag">T3</span> Order parts</td><td>Fri 27 Nov</td><td>Parts arrive after mid-December. No real inverter read before the paper.</td></tr>
+      <tr><td><span class="tag">B1</span> 50-home simulation, no control</td><td>Sat 12 Dec</td><td>The main result of the paper (overload hours) does not exist.</td></tr>
+      <tr><td><span class="tag">B3</span> Control result: with and without</td><td>Fri 18 Dec</td><td>No with-and-without comparison. The paper has no core result.</td></tr>
+      <tr><td><span class="tag">W10</span> Submit</td><td>Tue 29 Dec</td><td>Missing the 31 Dec deadline.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Gates</h2>
+  <table>
+    <thead><tr><th>Gate</th><th>Date</th><th>Plain meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Gate 0</td><td>Fri 20 Nov</td><td>We agree what we are building. Scope, pilot home facts, interviews booked, paper rules known.</td></tr>
+      <tr><td>Gate 1</td><td>Fri 27 Nov</td><td>We know the real situation. 3+ interviews, approval path known, tariff table verified.</td></tr>
+      <tr><td>Gate 2</td><td>Sun 6 Dec</td><td>Baselines work. Tests run, baseline forecast scored, parts ordered.</td></tr>
+      <tr><td>Gate 3</td><td>Tue 15 Dec</td><td>First results exist. Baseline simulation, scheduler plan, fault flag, outline agreed.</td></tr>
+      <tr><td>Gate 4</td><td>Tue 22 Dec</td><td>Full draft exists and the mentor has it.</td></tr>
+      <tr><td>Gate 5</td><td>Tue 29 Dec</td><td>Submitted.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+(function () {
+  var START = new Date(2026, 10, 11);   // 11 Nov 2026
+  var END   = new Date(2026, 11, 31);   // 31 Dec 2026
+  var TODAY = new Date(2026, 10, 11);
+  function d(m, day) { return new Date(2026, m - 1, day); }
+  function days(a, b) { return Math.round((b - a) / 86400000); }
+
+  // status: todo | doing | done | block   (block = red major blocker)
+  var tasks = [
+    // Mithil
+    { lane: 0, id: "D2", t: "Pilot home facts",         s: d(11,11), e: d(11,14), st: "block", tip: "Done when the fact sheet is filled in." },
+    { lane: 0, id: "D3", t: "Book interviews",          s: d(11,11), e: d(11,13), st: "todo",  tip: "Done when 4 interview dates are in the calendar." },
+    { lane: 0, id: "D4", t: "Paper rules",              s: d(11,11), e: d(11,13), st: "done",  tip: "Done when length, format, judging criteria and how to submit are saved." },
+    { lane: 0, id: "D5", t: "Check Net Plus rates",     s: d(11,11), e: d(11,18), st: "done",  tip: "Done when each rate statement is confirmed in a primary source." },
+    { lane: 0, id: "R2", t: "Inverter counts request",  s: d(11,16), e: d(11,16), st: "todo",  tip: "Done when the request is sent to CEB, LECO and SLSEA." },
+    { lane: 0, id: "R1", t: "Interviews (3 or more)",   s: d(11,16), e: d(11,27), st: "block", tip: "Done when 3+ note sheets are filed, no personal data." },
+    { lane: 0, id: "R5", t: "CEB settings table",       s: d(11,16), e: d(11,27), st: "done",  tip: "Done when the table is saved in fault-detect/ with source." },
+    { lane: 0, id: "B1", t: "50-home simulation",       s: d(11,30), e: d(12,12), st: "done", tip: "Done when the script runs end to end and overload hours with no control are saved." },
+    { lane: 0, id: "B4", t: "Fault + settings check v0",s: d(12,1),  e: d(12,15), st: "done",  tip: "Done when it flags a seeded fault and not a normal day." },
+    { lane: 0, id: "W1", t: "Outline",                  s: d(12,14), e: d(12,15), st: "doing",  tip: "Done when each section has an owner." },
+    { lane: 0, id: "W2", t: "Draft sections",           s: d(12,14), e: d(12,18), st: "todo",  tip: "Done when sections 1, 2, 6, 7, 9 have draft text." },
+    { lane: 0, id: "W6", t: "Number check",             s: d(12,21), e: d(12,21), st: "todo",  tip: "Done when every number has a source or file." },
+    { lane: 0, id: "W7", t: "Draft to mentor",          s: d(12,22), e: d(12,22), st: "todo",  tip: "Done when the mentor has the full draft." },
+    { lane: 0, id: "W10", t: "SUBMIT",                  s: d(12,29), e: d(12,29), st: "block", tip: "Done when the submission confirmation is saved." },
+
+    // Tatiana
+    { lane: 1, id: "T1", t: "Parts inventory",          s: d(11,11), e: d(11,13), st: "todo",  tip: "Done when the inventory table is filled in with a photo." },
+    { lane: 1, id: "T2", t: "Approve parts list",       s: d(11,16), e: d(11,20), st: "todo",  tip: "Done when the list has local quotes from 2 shops and Mithil signs the budget." },
+    { lane: 1, id: "T4", t: "Manuals + register docs",  s: d(11,16), e: d(11,27), st: "todo",  tip: "Done when the register list and read method are found for 3 brands." },
+    { lane: 1, id: "T3", t: "Order parts",              s: d(11,23), e: d(11,27), st: "block", tip: "Done when the order is placed and the arrival date is known." },
+    { lane: 1, id: "TS", t: "Inverter simulator",       s: d(11,30), e: d(12,4),  st: "todo",  tip: "Done when the reader runs against the simulator on a laptop." },
+    { lane: 1, id: "B5", t: "First real read",          s: d(12,7),  e: d(12,11), st: "todo",  tip: "Only if permission and parts are ready. Done when one real value matches the inverter display." },
+    { lane: 1, id: "B6", t: "Bench tests + install notes", s: d(12,14), e: d(12,18), st: "todo", tip: "Done when test results are a pass/fail table and a technician can follow the notes." },
+    { lane: 1, id: "W4", t: "Draft Edge Unit section",  s: d(12,14), e: d(12,18), st: "todo",  tip: "Done when the text has a block diagram and the tier table." },
+
+    // Senesh
+    { lane: 2, id: "S1", t: "Tests run",                s: d(11,11), e: d(11,16), st: "todo",  tip: "Done when python -m pytest runs and passes." },
+    { lane: 2, id: "R4", t: "Tariff table, verified",   s: d(11,11), e: d(11,20), st: "block", tip: "Draft by Wed 18 Nov. Mithil verifies by Fri 20 Nov. Every number has a source and date." },
+    { lane: 2, id: "D6", t: "App P0 fixes",             s: d(11,11), e: d(12,4),  st: "todo",  tip: "Done when items 1-12 in ui-ux-changes.md are ticked and screens re-exported." },
+    { lane: 2, id: "S3", t: "Baseline forecast score",  s: d(11,16), e: d(11,27), st: "todo",  tip: "Done when the score table is saved." },
+    { lane: 2, id: "B2", t: "Scheduler v0",             s: d(11,23), e: d(12,12), st: "todo",  tip: "Done when 5 test cases pass, including a Net Plus case that says no saving from timing." },
+    { lane: 2, id: "S5", t: "Improved forecast",        s: d(12,1),  e: d(12,6),  st: "todo",  tip: "Done when it beats the baseline, or we report that it does not." },
+    { lane: 2, id: "B7", t: "Utility dashboard screens",s: d(12,1),  e: d(12,11), st: "todo",  tip: "Done when 4 screens are exported." },
+    { lane: 2, id: "B8", t: "P1 app fixes + user tests",s: d(12,7),  e: d(12,18), st: "todo",  tip: "Done when items 13-24 are done or logged and test notes list the top 5 confusions." },
+    { lane: 2, id: "W3", t: "Draft results + figures",  s: d(12,14), e: d(12,20), st: "todo",  tip: "Done when sections 4 and 5 and the charts are drafted." },
+
+    // Together
+    { lane: 3, id: "D1", t: "Scope confirmed (Option C)", s: d(11,11), e: d(11,20), st: "doing", tip: "Option C chosen by Mithil. Done when Tatiana, Senesh and the mentor confirm." },
+    { lane: 3, id: "S4", t: "Demand profile",           s: d(11,30), e: d(12,4),  st: "done",  tip: "Mithil + Senesh. Done when a labelled synthetic profile exists." },
+    { lane: 3, id: "B3", t: "Control result (with / without)", s: d(12,7), e: d(12,18), st: "doing", tip: "Mithil + Senesh. Done when a table and chart show overload hours with and without control." },
+    { lane: 3, id: "W8", t: "Fix mentor comments",      s: d(12,23), e: d(12,27), st: "todo",  tip: "Done when the comment list is cleared." },
+    { lane: 3, id: "W9", t: "Final read",               s: d(12,28), e: d(12,28), st: "todo",  tip: "Done when the format checklist passes." }
+  ];
+
+  var lanes = [
+    { name: "Mithil", sub: "interviews, simulation, paper" },
+    { name: "Tatiana", sub: "Edge Unit" },
+    { name: "Senesh", sub: "data, scheduler, app" },
+    { name: "Together", sub: "decisions, joint work" }
+  ];
+
+  var gates = [
+    { n: "Gate 0", dt: d(11,20) }, { n: "Gate 1", dt: d(11,27) }, { n: "Gate 2", dt: d(12,6) },
+    { n: "Gate 3", dt: d(12,15) }, { n: "Gate 4", dt: d(12,22) }, { n: "Gate 5", dt: d(12,29) }
+  ];
+
+  var inner = document.getElementById("inner");
+  var chart = document.getElementById("chart");
+  var LABEL_W = 118;
+  var totalDays = days(START, END) + 1;
+  var dayW = Math.max(20, Math.floor((chart.clientWidth - LABEL_W - 16) / totalDays));
+  var width = LABEL_W + totalDays * dayW + 16;
+  inner.style.width = width + "px";
+  function x(date) { return LABEL_W + days(START, date) * dayW; }
+
+  // header: months and weeks
+  var head = document.createElement("div"); head.className = "head"; inner.appendChild(head);
+  var mn = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  [[10, START], [11, d(12,1)]].forEach(function (m) {
+    var el = document.createElement("div"); el.className = "month";
+    el.style.left = (x(m[1]) + 4) + "px"; el.textContent = mn[m[0]] + " 2026"; head.appendChild(el);
+  });
+  for (var i = 0; i < totalDays; i++) {
+    var dt = new Date(START.getTime() + i * 86400000);
+    if (dt.getDay() === 1 || i === 0) {
+      var w = document.createElement("div"); w.className = "wk";
+      w.style.left = x(dt) + "px"; w.textContent = (dt.getDay() === 1 ? "Mon " : "") + dt.getDate();
+      head.appendChild(w);
+      var g = document.createElement("div"); g.className = "gridline"; g.style.left = x(dt) + "px"; inner.appendChild(g);
+    }
+  }
+
+  // lanes with row packing
+  var laneEls = [];
+  var CHAR_PX = 6.6, ROW_H = 36, PAD = 10;
+  lanes.forEach(function (ln, li) {
+    var items = tasks.filter(function (t) { return t.lane === li; })
+                     .sort(function (a, b) { return a.s - b.s || a.e - b.e; });
+    var rowEnds = [];
+    items.forEach(function (t) {
+      var barPx = (days(t.s, t.e) + 1) * dayW;
+      var label = t.id + " " + t.t;
+      var need = Math.max(barPx, label.length * CHAR_PX + 18);
+      var startPx = x(t.s);
+      var r = 0;
+      while (r < rowEnds.length && rowEnds[r] > startPx - 4) r++;
+      rowEnds[r] = startPx + need + 6;
+      t._row = r; t._w = barPx; t._label = label; t._need = need;
+    });
+    var rows = Math.max(1, rowEnds.length);
+    var lane = document.createElement("div"); lane.className = "lane";
+    lane.style.height = (rows * ROW_H + PAD * 2) + "px";
+    var lab = document.createElement("div"); lab.className = "lane-label";
+    lab.innerHTML = ln.name + "<small>" + ln.sub + "</small>";
+    lane.appendChild(lab);
+    items.forEach(function (t) {
+      var b = document.createElement("div");
+      b.className = "bar " + t.st;
+      b.style.left = x(t.s) + "px";
+      b.style.top = (PAD + t._row * ROW_H) + "px";
+      b.style.width = Math.max(t._w, t._need) + "px";   // short tasks get a bar wide enough to read; the left edge is the start date
+      b.textContent = t._label;
+      var span = days(t.s, t.e) === 0 ? "" : " to " + t.e.getDate() + " " + mn[t.e.getMonth()];
+      b.title = t.id + " " + t.t + "\n" + t.s.getDate() + " " + mn[t.s.getMonth()] + span + "\n" + t.tip +
+                (t.st === "block" ? "\nMAJOR BLOCKER" : "");
+      // text overflows past short bars; keep it readable on a light chip
+      if (t._need > t._w) { b.style.overflow = "visible"; b.style.background = ""; }
+      lane.appendChild(b);
+    });
+    inner.appendChild(lane);
+    laneEls.push(lane);
+  });
+
+  // overlay lines (gates, today, deadline): span from header bottom to chart bottom
+  function line(cls, date, text) {
+    var l = document.createElement("div"); l.className = cls; l.style.left = x(date) + "px";
+    l.style.top = "58px"; l.style.bottom = "0";
+    l.innerHTML = "<b>" + text + "</b>"; inner.appendChild(l);
+  }
+  gates.forEach(function (g) { line("gate", g.dt, g.n); });
+  line("today", TODAY, "Today 11 Nov");
+  line("deadline", END, "Deadline 31 Dec");
+})();
+</script>
+</body>
+</html>

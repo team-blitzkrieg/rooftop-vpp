@@ -1,0 +1,42 @@
+{
+  "source": {
+    "title": "Recommended Settings for Inverters (as per the GM meeting held on 2025-02-25)",
+    "publisher": "Ceylon Electricity Board",
+    "url": "https://www.ceb.lk/front_img/img_reports/1742277909Solar_Inverter_settings.pdf",
+    "read_on": "2026-11-11",
+    "note": "Transcribed by software from the PDF. Check every number against the PDF before it is used on a real inverter. The PDF prints the under-frequency row as '47<f'; it is read here as f < 47 Hz."
+  },
+  "applies_to": "Plant capacity less than 1 MW",
+  "nominal_voltage_v": 230,
+  "nominal_frequency_hz": 50,
+  "settings": {
+    "ten_min_ov_pu": {"value": 1.06, "kind": "max", "meaning": "10-minute average voltage limit for sustained operation. Above it the inverter disconnects or stops generating within 3 s."},
+    "ten_min_ov_s": {"value": 3, "kind": "max", "meaning": "Time to disconnect after the 10-minute average limit is passed"},
+    "ov2_pu": {"value": 1.2, "kind": "exact", "meaning": "Over-voltage stage 2 trip level"},
+    "ov2_s": {"value": 0.16, "kind": "exact", "meaning": "Over-voltage stage 2 clearing time"},
+    "ov1_pu": {"value": 1.15, "kind": "exact", "meaning": "Over-voltage stage 1 trip level"},
+    "ov1_s": {"value": 2, "kind": "exact", "meaning": "Over-voltage stage 1 clearing time"},
+    "uv1_pu": {"value": 0.7, "kind": "ride_through_low", "meaning": "Under-voltage stage 1 trip level. A higher setting trips the inverter during a grid dip."},
+    "uv1_s": {"value": 10, "kind": "ride_through_time", "meaning": "Under-voltage stage 1 clearing time. A shorter setting trips the inverter too early."},
+    "uv2_pu": {"value": 0.45, "kind": "ride_through_low", "meaning": "Under-voltage stage 2 trip level"},
+    "uv2_s": {"value": 0.32, "kind": "ride_through_time", "meaning": "Under-voltage stage 2 clearing time"},
+    "of_hz": {"value": 52.0, "kind": "ride_through_high", "meaning": "Over-frequency trip level. A lower setting trips the inverter too early."},
+    "of_s": {"value": 0.2, "kind": "exact", "meaning": "Over-frequency clearing time"},
+    "uf_hz": {"value": 47.0, "kind": "ride_through_low", "meaning": "Under-frequency trip level. A higher setting trips the inverter when the grid most needs it."},
+    "uf_s": {"value": 0.2, "kind": "exact", "meaning": "Under-frequency clearing time"},
+    "lvrt_enabled": {"value": true, "kind": "bool", "meaning": "Low-voltage ride-through must be active (Grid Connection Code July 2024, clause 3.17.3)"},
+    "reconnect_v_min_pu": {"value": 0.94, "kind": "exact", "meaning": "Lowest voltage at which the inverter may reconnect"},
+    "reconnect_v_max_pu": {"value": 1.06, "kind": "exact", "meaning": "Highest voltage at which the inverter may reconnect"},
+    "reconnect_f_min_hz": {"value": 49.5, "kind": "exact", "meaning": "Lowest frequency at which the inverter may reconnect"},
+    "reconnect_f_max_hz": {"value": 50.5, "kind": "exact", "meaning": "Highest frequency at which the inverter may reconnect"},
+    "reconnect_delay_s": {"value": 600, "kind": "min", "meaning": "Minimum wait before reconnecting"},
+    "reconnect_ramp_s": {"value": 900, "kind": "min", "meaning": "Linear ramp back to full power (nameplate / 900 s)"}
+  },
+  "lvrt_curve": [
+    {"v_from_pu": 0.9, "v_to_pu": 1.0, "ride_through": "infinite"},
+    {"v_from_pu": 0.85, "v_to_pu": 0.9, "ride_through": "3 min"},
+    {"v_from_pu": 0.8, "v_to_pu": 0.85, "ride_through": "2.5 s"},
+    {"v_from_pu": 0.0, "v_to_pu": 0.8, "ride_through": "trip time varies linearly from 0.14 s to 1.2 s"},
+    {"v_from_pu": 0.0, "v_to_pu": 0.0, "ride_through": "0.14 s"}
+  ]
+}
