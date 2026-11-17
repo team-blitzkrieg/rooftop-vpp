@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rooftop VPP — PV forecast</title>
+    <meta
+      name="description"
+      content="Static PV forecast dashboard for the Sri Lanka rooftop pilot (SIMULATED data, Asia/Colombo)."
+    />
+    <link rel="stylesheet" href="./assets/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Rooftop VPP — PV forecast</h1>
+        <p class="tagline">
+          Sri Lanka rooftop solar pilot · issue time midnight <strong>Asia/Colombo</strong> ·
+          forecasts are for scheduling visibility only, <strong>not inverter commands</strong>.
+        </p>
+        <p class="notice">
+          All curves and metrics on this page use <strong>SIMULATED</strong> training data unless
+          otherwise labelled. This site does not control equipment.
+        </p>
+      </header>
+
+      <div id="load-error" class="error-banner" hidden></div>
+
+      <nav class="tabs" role="tablist" aria-label="Dashboard sections">
+        <button type="button" class="tab-btn" role="tab" data-tab="overview" aria-selected="true">
+          Overview
+        </button>
+        <button type="button" class="tab-btn" role="tab" data-tab="forecast" aria-selected="false">
+          Forecast day
+        </button>
+        <button type="button" class="tab-btn" role="tab" data-tab="report" aria-selected="false">
+          Model report
+        </button>
+      </nav>
+
+      <section id="panel-overview" class="panel active" role="tabpanel">
+        <div class="card">
+          <h2>Latest model</h2>
+          <p id="ov-version" class="muted">—</p>
+          <p id="ov-verdict">—</p>
+          <div class="metrics" style="margin-top: 1rem">
+            <div class="metric">
+              <span class="label">Test MAE — LightGBM</span>
+              <span class="value" id="ov-lgbm">—</span>
+            </div>
+            <div class="metric">
+              <span class="label">Test MAE — baseline</span>
+              <span class="value" id="ov-base">—</span>
+            </div>
+            <div class="metric">
+              <span class="label">Data label</span>
+              <span class="value" id="ov-data">SIMULATED</span>
+            </div>
+            <div class="metric">
+              <span class="label">Forecast CSV files</span>
+              <span class="value" id="ov-files">—</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="panel-forecast" class="panel" role="tabpanel">
+        <div class="card">
+          <h2>Forecast day</h2>
+          <div class="controls">
+            <label>
+              Model version
+              <select id="fc-version"></select>
+            </label>
+            <label>
+              Site
+              <select id="fc-site"></select>
+            </label>
+            <label>
+              Issue date (Colombo midnight)
+              <select id="fc-day"></select>
+            </label>
+          </div>
+          <div class="metrics">
+            <div class="metric">
+              <span class="label">Forecast energy (24 h)</span>
+              <span class="value" id="en-model">—</span>
+            </div>
+            <div class="metric">
+              <span class="label">Baseline energy</span>
+              <span class="value" id="en-base">—</span>
+            </div>
+            <div class="metric">
+              <span class="label">Nameplate cap (integral)</span>
+              <span class="value" id="en-sys">—</span>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="forecast-chart" aria-label="PV forecast curve"></canvas>
+          </div>
+          <h3>Hourly table</h3>
+          <div class="table-scroll">
+            <table class="data" id="forecast-table">
+              <thead>
+                <tr>
+                  <th>Local time (Asia/Colombo)</th>
+                  <th>pv_kw</th>
+                  <th>baseline_kw</th>
+                  <th>system_kw</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="panel-report" class="panel" role="tabpanel">
+        <div class="card">
+          <h2>Model report</h2>
+          <label>
+            Model version
+            <select id="report-version"></select>
+          </label>
+          <p>Data label: <strong id="report-data-label">SIMULATED</strong></p>
+          <div id="report-md" class="md-body"></div>
+          <p class="verdict" id="report-verdict">—</p>
+          <h3>Test metrics</h3>
+          <div class="table-scroll">
+            <table class="data" id="report-metrics">
+              <thead>
+                <tr>
+                  <th>Slice</th>
+                  <th>Model</th>
+                  <th>n</th>
+                  <th>MAE (kW)</th>
+                  <th>RMSE (kW)</th>
+                  <th>nMAE</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        Team Blitzkrieg · Curtin University Colombo ·
+        <a href="https://github.com/team-blitzkrieg/rooftop-vpp">GitHub</a> ·
+        Interactive Streamlit UI:
+        <a href="https://github.com/team-blitzkrieg/rooftop-vpp/tree/main/dashboard">dashboard/</a>
+      </footer>
+    </div>
+    <script src="./assets/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,231 @@
+{
+  "project": "Rooftops to Power Plant",
+  "model_version": "pv-lgbm-20261114T052344Z",
+  "git_sha": "eef52408c77ca042ae7fc34eb2e8d03008ae8721",
+  "data_label": "SIMULATED",
+  "controls_equipment": false,
+  "timezone": "Asia/Colombo",
+  "target": "pv_kw / system_kw during training; saved forecasts are AC kW",
+  "baseline": {
+    "name": "poa_times_system_kw_times_loss",
+    "loss_factor": 0.85,
+    "loss_factor_fitted": false,
+    "library": "pvlib",
+    "transposition": "isotropic"
+  },
+  "data_window": {
+    "start": "2024-06-01T00:00:00+05:30",
+    "end": "2024-06-21T23:00:00+05:30",
+    "n_rows": 1512,
+    "rows_dropped_missing_weather": 0,
+    "n_sites": 3,
+    "sites": [
+      "home-dehiwala",
+      "home-moratuwa",
+      "home-nugegoda"
+    ],
+    "resolution": "hourly"
+  },
+  "split": {
+    "rule": "Issue days stay whole. They are ordered in time and not shuffled. The last training day is before the first validation day, and the last validation day is before the first test day.",
+    "train_fraction": 0.7,
+    "val_fraction": 0.15,
+    "train": {
+      "n_issues": 14,
+      "first": "2024-06-01T00:00:00+05:30",
+      "last": "2024-06-14T00:00:00+05:30"
+    },
+    "val": {
+      "n_issues": 3,
+      "first": "2024-06-15T00:00:00+05:30",
+      "last": "2024-06-17T00:00:00+05:30"
+    },
+    "test": {
+      "n_issues": 4,
+      "first": "2024-06-18T00:00:00+05:30",
+      "last": "2024-06-21T00:00:00+05:30"
+    }
+  },
+  "features": [
+    "hour",
+    "day_of_year",
+    "solar_zenith_deg",
+    "solar_azimuth_deg",
+    "solar_elevation_deg",
+    "ghi_wm2",
+    "dni_wm2",
+    "dhi_wm2",
+    "cloud_cover_pct",
+    "temp_c",
+    "lag_24h_norm",
+    "lag_48h_norm",
+    "recent_norm",
+    "system_kw",
+    "tilt_deg",
+    "azimuth_deg"
+  ],
+  "params": {
+    "objective": "regression",
+    "metric": "l1",
+    "learning_rate": 0.05,
+    "num_leaves": 31,
+    "min_child_samples": 20,
+    "feature_fraction": 0.9,
+    "bagging_fraction": 0.9,
+    "bagging_freq": 1,
+    "verbosity": -1,
+    "seed": 7,
+    "num_threads": 1,
+    "force_row_wise": true,
+    "deterministic": true
+  },
+  "n_estimators_requested": 80,
+  "best_iteration": 80,
+  "early_stopping_rounds": 40,
+  "metrics": {
+    "train": {
+      "overall": {
+        "baseline": {
+          "n": 1008,
+          "mae_kw": 0.07982563707112707,
+          "rmse_kw": 0.1667927687147999,
+          "nmae": 0.013304272845187844
+        },
+        "lightgbm": {
+          "n": 1008,
+          "mae_kw": 0.042337599206349205,
+          "rmse_kw": 0.07960345987086678,
+          "nmae": 0.007056266534391534
+        }
+      },
+      "cloudy": {
+        "baseline": {
+          "n": 195,
+          "mae_kw": 0.09538178647530299,
+          "rmse_kw": 0.14669280953293765,
+          "nmae": 0.01683207996622994
+        },
+        "lightgbm": {
+          "n": 195,
+          "mae_kw": 0.06191692307692307,
+          "rmse_kw": 0.08704940477564951,
+          "nmae": 0.010926515837104071
+        }
+      },
+      "midday": {
+        "baseline": {
+          "n": 126,
+          "mae_kw": 0.19344227512702872,
+          "rmse_kw": 0.2809965022928716,
+          "nmae": 0.03224037918783812
+        },
+        "lightgbm": {
+          "n": 126,
+          "mae_kw": 0.0812547619047619,
+          "rmse_kw": 0.11369522787377596,
+          "nmae": 0.013542460317460316
+        }
+      }
+    },
+    "val": {
+      "overall": {
+        "baseline": {
+          "n": 216,
+          "mae_kw": 0.08663580550330047,
+          "rmse_kw": 0.17827528256945419,
+          "nmae": 0.014439300917216744
+        },
+        "lightgbm": {
+          "n": 216,
+          "mae_kw": 0.0713486111111111,
+          "rmse_kw": 0.14120399594991007,
+          "nmae": 0.011891435185185184
+        }
+      },
+      "cloudy": {
+        "baseline": {
+          "n": 52,
+          "mae_kw": 0.1030223854469252,
+          "rmse_kw": 0.13278057423405373,
+          "nmae": 0.017916936599465253
+        },
+        "lightgbm": {
+          "n": 52,
+          "mae_kw": 0.09750192307692306,
+          "rmse_kw": 0.12744902525504676,
+          "nmae": 0.016956856187290967
+        }
+      },
+      "midday": {
+        "baseline": {
+          "n": 27,
+          "mae_kw": 0.2077717870807712,
+          "rmse_kw": 0.2992850177412478,
+          "nmae": 0.03462863118012854
+        },
+        "lightgbm": {
+          "n": 27,
+          "mae_kw": 0.16788518518518522,
+          "rmse_kw": 0.22604716895504928,
+          "nmae": 0.02798086419753087
+        }
+      }
+    },
+    "test": {
+      "overall": {
+        "baseline": {
+          "n": 288,
+          "mae_kw": 0.08060713394545393,
+          "rmse_kw": 0.1638999510385076,
+          "nmae": 0.013434522324242323
+        },
+        "lightgbm": {
+          "n": 288,
+          "mae_kw": 0.05765138888888889,
+          "rmse_kw": 0.10318993376563218,
+          "nmae": 0.009608564814814815
+        }
+      },
+      "cloudy": {
+        "baseline": {
+          "n": 65,
+          "mae_kw": 0.09986581036307325,
+          "rmse_kw": 0.14110203071974692,
+          "nmae": 0.01920496353136024
+        },
+        "lightgbm": {
+          "n": 65,
+          "mae_kw": 0.0924846153846154,
+          "rmse_kw": 0.12068485406213987,
+          "nmae": 0.017785502958579884
+        }
+      },
+      "midday": {
+        "baseline": {
+          "n": 36,
+          "mae_kw": 0.20766689781922776,
+          "rmse_kw": 0.3166519621394339,
+          "nmae": 0.03461114963653796
+        },
+        "lightgbm": {
+          "n": 36,
+          "mae_kw": 0.11051111111111113,
+          "rmse_kw": 0.14797583323712768,
+          "nmae": 0.01841851851851852
+        }
+      }
+    }
+  },
+  "nmae_definition": "MAE in kW divided by the mean system_kw on the same rows",
+  "cloudy_definition": "Daylight hours (solar elevation > 0) on issue-days whose daylight forecast cloud cover averages at least 60 percent.",
+  "midday_definition": "Local hours 11, 12 and 13 in Asia/Colombo",
+  "lightgbm_beats_baseline_on_test_mae": true,
+  "verdict": "LightGBM test MAE is 0.0577 kW. The baseline is 0.0806 kW. LightGBM is ahead on this run. On cloudy hours LightGBM is ahead of the baseline (0.0925 vs 0.0999 kW MAE). On midday hours LightGBM is ahead of the baseline (0.1105 vs 0.2077 kW MAE).",
+  "library_versions": {
+    "pvlib": "0.16.1",
+    "numpy": "2.5.4",
+    "pandas": "3.1.1",
+    "lightgbm": "4.7.0"
+  },
+  "note": "SIMULATED means the target was generated, not read from an inverter. A lower error on that series is not a result about the pilot homes. This run did not send a setpoint to any device."
+}

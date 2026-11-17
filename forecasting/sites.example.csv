@@ -1,0 +1,4 @@
+site_id,name,location_id,system_kw,tilt_deg,azimuth_deg,latitude,longitude,timezone,has_meter,demand_scale_kw
+home-dehiwala,Dehiwala,colombo,5.0,10,180,6.8510,79.8650,Asia/Colombo,true,1.2
+home-nugegoda,Nugegoda,colombo,3.0,8,90,6.8649,79.8997,Asia/Colombo,true,0.8
+home-moratuwa,Moratuwa,colombo,10.0,12,180,6.7730,79.8816,Asia/Colombo,true,2.0

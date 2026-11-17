@@ -1,0 +1,11 @@
+.git
+.venv
+venv
+**/__pycache__
+.pytest_cache
+data/raw
+data/processed
+forecasting/models
+*.md
+!README.md
+.env

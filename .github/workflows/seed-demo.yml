@@ -1,0 +1,30 @@
+name: Seed demo
+
+# Manual only. There is no schedule. This does not promote a model.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Seed three homes and a simulated 48-hour forecast
+        run: python -m api.seed_demo
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

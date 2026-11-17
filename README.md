@@ -117,8 +117,44 @@ pip install -r requirements.txt
 
 On Windows, activate with `.venv\Scripts\activate`.
 
-Weather download and the simulated rooftop PV series are in `data/`. See `data/README.md` for the commands. The forecast models, the Pi code and the dashboard are not written yet. `requirements.txt` is a shared starting set: pandas, NumPy, LightGBM, pandapower, Requests, PyModbus, scikit-learn, Matplotlib, Jupyter, Streamlit, pvlib and pytest.
+Weather download and the simulated rooftop PV series are in `data/`. See `data/README.md` for the commands. Solar and household demand forecasts are in `forecasting/` (`--target pv` or `--target demand`). The hosted API, database and scheduled jobs are in `DEPLOY.md`. They stay on free tiers. The Pi code and the dashboard are not written yet. `requirements.txt` is a shared starting set: pandas, NumPy, LightGBM, pandapower, Requests, PyModbus, scikit-learn, Matplotlib, Jupyter, Streamlit, pvlib and pytest.
 
 Put pilot inverter logs in `data/raw/`, not inside `weather/` or `live/`. Git ignores loose files there. The weather files and the simulated PV tables are already in the repo.
 
 Branch names and reviews are in `CONTRIBUTING.md`.
+
+## GitHub Pages
+
+A static read-only PV forecast dashboard is published from the `docs/` folder:
+
+**https://team-blitzkrieg.github.io/rooftop-vpp/**
+
+It mirrors the Streamlit tabs (overview, forecast day, model report) using committed JSON under `docs/data/`. Data are **SIMULATED**; issue time is midnight **Asia/Colombo**. The page does not send commands to inverters.
+
+To refresh artefacts locally from the repo root:
+
+```bash
+python scripts/export_github_pages.py --with-demo-train
+```
+
+The org must enable Pages for this repository: **Settings → Pages → Build and deployment → Source: GitHub Actions**. Pushes to `main` and manual workflow runs rebuild the site via `.github/workflows/github-pages.yml`.
+
+## Deploy on Vercel
+
+The same static dashboard under `docs/` can be deployed on [Vercel](https://vercel.com) without running Python in the cloud build. Production uses the committed `docs/data/` JSON (same as a zero-build GitHub Pages export). Vercel works with a **private** GitHub repo on the Hobby plan.
+
+1. Import **team-blitzkrieg/rooftop-vpp** in the Vercel dashboard (New Project → connect GitHub).
+2. Leave **Root Directory** as `.` (repository root).
+3. Framework preset: **Other** (no framework). Vercel reads `vercel.json` at the repo root: `outputDirectory` is `docs`, and install/build commands are empty.
+4. Deploy. The live URL is `https://<project-name>.vercel.app` (preview URLs on other branches use the same pattern).
+
+To refresh demo forecast data before a deploy:
+
+```bash
+python scripts/export_github_pages.py --with-demo-train
+git add docs/data
+git commit -m "Refresh static dashboard data"
+git push
+```
+
+Optional (advanced): if the team later wants Vercel to regenerate `docs/data` on every push, set **Build Command** in the Vercel project settings (or in `vercel.json`) to `python scripts/export_github_pages.py --with-demo-train` and **Install Command** to `pip install -r requirements.txt`, with Python 3.12. LightGBM and large training deps can be slow or fragile on Vercel builders; the recommended path is local export + commit, as for GitHub Pages.
