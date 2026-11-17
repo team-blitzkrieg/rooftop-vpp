@@ -76,7 +76,7 @@ type Parts = {
   dayLabel: string;
 };
 
-function parts(iso: string, timeZone: string): Parts {
+export function zonedParts(iso: string, timeZone: string): Parts {
   const list = new Intl.DateTimeFormat("en-GB", {
     timeZone,
     year: "numeric",
@@ -107,7 +107,7 @@ function byTarget(rows: ForecastRow[], target: string): ForecastRow[] {
 }
 
 function atHour(rows: ForecastRow[], key: string, timeZone: string): ForecastRow | null {
-  return rows.find((row) => parts(row.timestamp, timeZone).key === key) ?? null;
+  return rows.find((row) => zonedParts(row.timestamp, timeZone).key === key) ?? null;
 }
 
 function quantity(row: ForecastRow | null): Quantity {
@@ -144,7 +144,7 @@ function flowForHour(pv: ForecastRow | null, demand: ForecastRow | null, net: Fo
 }
 
 function dayRows(rows: ForecastRow[], day: string, timeZone: string): ForecastRow[] {
-  return rows.filter((row) => parts(row.timestamp, timeZone).day === day);
+  return rows.filter((row) => zonedParts(row.timestamp, timeZone).day === day);
 }
 
 function bestPvWindow(pvRows: ForecastRow[], timeZone: string): { start: string; end: string; rows: ForecastRow[] } | null {
@@ -170,8 +170,8 @@ function bestPvWindow(pvRows: ForecastRow[], timeZone: string): { start: string;
 }
 
 export function formatWindow(start: string, end: string, timeZone: string): string {
-  const from = parts(start, timeZone);
-  const to = parts(end, timeZone);
+  const from = zonedParts(start, timeZone);
+  const to = zonedParts(end, timeZone);
   if (from.day === to.day) return `${from.clock} – ${to.clock}`;
   return `${from.dayLabel} ${from.clock} – ${to.dayLabel} ${to.clock}`;
 }
@@ -209,8 +209,8 @@ export function buildSnapshot(
   const demandRows = byTarget(rows, "demand");
   const netRows = byTarget(rows, "net");
   const issuedAt = rows.find((row) => row.issued_at)?.issued_at ?? null;
-  const nowKey = parts(now.toISOString(), timeZone).key;
-  const today = parts(now.toISOString(), timeZone).day;
+  const nowKey = zonedParts(now.toISOString(), timeZone).key;
+  const today = zonedParts(now.toISOString(), timeZone).day;
 
   const livePv = atHour(pvRows, nowKey, timeZone);
   const liveDemand = atHour(demandRows, nowKey, timeZone);
@@ -222,7 +222,7 @@ export function buildSnapshot(
   const chosenTime = hasNow
     ? now.toISOString()
     : latestAtOrBefore(rows, now) ?? rows[0]?.timestamp ?? null;
-  const chosenKey = chosenTime ? parts(chosenTime, timeZone).key : "";
+  const chosenKey = chosenTime ? zonedParts(chosenTime, timeZone).key : "";
   const pv = hasNow ? livePv : atHour(pvRows, chosenKey, timeZone);
   const demand = hasNow ? liveDemand : atHour(demandRows, chosenKey, timeZone);
   const net = hasNow ? liveNet : atHour(netRows, chosenKey, timeZone);
@@ -234,9 +234,9 @@ export function buildSnapshot(
   const importedRows: ForecastRow[] = [];
   const exportedRows: ForecastRow[] = [];
   const hours = new Set<string>([
-    ...pvToday.map((row) => parts(row.timestamp, timeZone).key),
-    ...demandToday.map((row) => parts(row.timestamp, timeZone).key),
-    ...netToday.map((row) => parts(row.timestamp, timeZone).key),
+    ...pvToday.map((row) => zonedParts(row.timestamp, timeZone).key),
+    ...demandToday.map((row) => zonedParts(row.timestamp, timeZone).key),
+    ...netToday.map((row) => zonedParts(row.timestamp, timeZone).key),
   ]);
   for (const key of hours) {
     const hourPv = atHour(pvToday, key, timeZone);
