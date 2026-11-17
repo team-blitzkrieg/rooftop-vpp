@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppHeader, Frame, RequireDemo } from "@/components/household/shell";
 import { CountUp, Segmented } from "@/components/household/ui";
 import { useHomeData } from "@/components/household/use-home-data";
@@ -16,11 +16,32 @@ export default function SavingsPage() {
   const [span, setSpan] = useState<"week" | "month" | "pilot">("month");
   const [open, setOpen] = useState(false);
   const [rate, setRate] = useState("");
+  const [serverNote, setServerNote] = useState("");
+  const scheme: Scheme = demo?.profile?.scheme ?? "net-plus";
+  const systemKw = Number(demo?.profile?.systemKw || data.site?.system_kw || 0);
+  useEffect(() => {
+    if (!data.siteId) return;
+    const params = new URLSearchParams({
+      site: data.siteId,
+      scheme,
+      system_kw: String(systemKw || data.site?.system_kw || 3),
+    });
+    let stop = false;
+    void fetch(`/api/household/savings?${params}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body) => {
+        if (stop || !body) return;
+        const money = body.lkr == null ? `${body.kwh} kWh` : `LKR ${body.lkr} from ${body.kwh} kWh`;
+        setServerNote(`Server figure: ${money}. ${body.data_label}. ${body.note}`);
+      })
+      .catch(() => undefined);
+    return () => {
+      stop = true;
+    };
+  }, [data.siteId, data.site?.system_kw, scheme, systemKw]);
   const days = span === "week" ? rangeDays(addDays(today, -6), today) : span === "month" ? rangeDays(`${today.slice(0, 8)}01`, today) : rangeDays(addDays(today, -30), today);
   const hours = (data.rows ?? []).length ? days.flatMap((day) => hoursForDay(data.rows ?? [], zone, day)) : [];
   const totals = sumHours(hours);
-  const scheme: Scheme = demo?.profile?.scheme ?? "net-plus";
-  const systemKw = Number(demo?.profile?.systemKw || data.site?.system_kw || 0);
   const fit = feedInLkr(systemKw > 0 ? systemKw : 5);
   const assumed = Number(rate);
   const generated = totals?.pv == null ? null : Math.round(totals.pv * 10) / 10;
@@ -47,6 +68,7 @@ export default function SavingsPage() {
             ]}
           />
           <p className="hh-note">{schemeLabel(scheme)}. {schemeWhy(scheme)} {demo?.profile ? "" : "No scheme is saved yet, so this uses the Net Plus version."}</p>
+          {serverNote ? <p className="hh-fine">{serverNote}</p> : null}
           <section className="hh-card">
             {scheme === "net-plus" ? (
               <>

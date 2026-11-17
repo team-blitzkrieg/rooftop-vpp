@@ -7,6 +7,7 @@ import { AppHeader, Frame, RequireDemo } from "@/components/household/shell";
 import { Button, Modal } from "@/components/household/ui";
 import { useHomeData } from "@/components/household/use-home-data";
 import { updateDemo, useDemo } from "@/lib/demo-store";
+import { browserSupabase } from "@/lib/supabase";
 
 export default function SettingsPage() {
   const data = useHomeData();
@@ -75,14 +76,14 @@ export default function SettingsPage() {
             <Link className="hh-row-link" href="/household/help"><span className="hh-grow"><strong>Help and contact</strong><span>No installer is stored</span></span><span>›</span></Link>
             <Link className="hh-row-link" href="/household/notifications"><span className="hh-grow"><strong>Notifications</strong><span>{demo?.notifyAlerts ? "Forecast alerts on" : "Forecast alerts off"}</span></span><span>›</span></Link>
             <Link className="hh-row-link" href="/household/utility"><span className="hh-grow"><strong>Utility view</strong><span>Simulated feeder results</span></span><span>›</span></Link>
-            <Link className="hh-row-link" href="/household/coordinator"><span className="hh-grow"><strong>Coordinator</strong><span>Sites and local consent</span></span><span>›</span></Link>
+            <Link className="hh-row-link" href="/household/coordinator"><span className="hh-grow"><strong>Coordinator</strong><span>Sites, assignments, and cases</span></span><span>›</span></Link>
             <Link className="hh-row-link" href="/household/technician"><span className="hh-grow"><strong>Technician</strong><span>Brands, registers, safety</span></span><span>›</span></Link>
             <Link className="hh-row-link" href="/household/components"><span className="hh-grow"><strong>Component sheet</strong><span>Shared controls used in this app</span></span><span>›</span></Link>
             <div className="hh-row-link"><span className="hh-grow"><strong>Account</strong><span>{demo?.session?.email}</span></span></div>
           </section>
           <Button type="button" variant="danger-outline" onClick={() => setOpen(true)}>Withdraw from pilot</Button>
-          <p className="hh-local">Withdrawing clears this browser's demo state. It does not delete Supabase forecasts and does not contact a device.</p>
-          <button type="button" className="hh-btn ghost" onClick={() => { updateDemo((state) => ({ ...state, session: null })); router.push("/household/sign-in"); }}>Sign out</button>
+          <p className="hh-local">{demo?.session?.mode === "auth" ? "Signed in with an email code. Advice only." : "Demo sign-in. Stored on this browser."} Withdrawing does not delete forecasts and does not contact a device.</p>
+          <button type="button" className="hh-btn ghost" onClick={() => { void browserSupabase()?.auth.signOut(); updateDemo((state) => ({ ...state, session: null })); router.push("/household/sign-in"); }}>Sign out</button>
         </div>
       </RequireDemo>
       <Modal open={open} title="Withdraw from the pilot?" onClose={() => setOpen(false)}>
@@ -91,7 +92,7 @@ export default function SettingsPage() {
           <li>Does not delete forecast rows.</li>
           <li>Does not stop an edge unit, because this app never starts one.</li>
           <li>Signs you out of this demo.</li>
-          <li>{demo?.consent?.scopes.totals ? "Anonymised totals were included in the consent on this browser. Nothing was written to Supabase." : "Anonymised totals were not consented, and none are kept."}</li>
+          <li>{demo?.session?.mode === "auth" ? "The consent row is marked withdrawn. Forecast rows stay." : demo?.consent?.scopes.totals ? "Anonymised totals were included in the consent on this browser. Nothing was written to Supabase." : "Anonymised totals were not consented, and none are kept."}</li>
         </ul>
         <p className="hh-note">Your solar system is not affected. Type WITHDRAW to confirm.</p>
         <div className="hh-input">

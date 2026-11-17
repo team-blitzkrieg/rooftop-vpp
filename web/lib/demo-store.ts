@@ -25,7 +25,7 @@ export type ConsentScopes = {
 };
 
 export type DemoState = {
-  session: { email: string; signedInAt: string } | null;
+  session: { email: string; signedInAt: string; mode: "demo" | "auth"; userId: string | null } | null;
   consentSkipped: boolean;
   consent: { version: string; agreedAt: string; scopes: ConsentScopes } | null;
   profile: {
@@ -51,7 +51,7 @@ export type DemoState = {
   } | null;
 };
 
-const EMPTY: DemoState = {
+export const EMPTY: DemoState = {
   session: null,
   consentSkipped: false,
   consent: null,
@@ -70,15 +70,22 @@ export function loadDemo(): DemoState {
   try {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return EMPTY;
-    return { ...EMPTY, ...JSON.parse(raw) };
+    const parsed = { ...EMPTY, ...JSON.parse(raw) } as DemoState;
+    if (parsed.session && !parsed.session.mode) {
+      parsed.session = { ...parsed.session, mode: "demo", userId: null };
+    }
+    return parsed;
   } catch {
     return EMPTY;
   }
 }
 
-export function saveDemo(state: DemoState) {
+export function saveDemo(state: DemoState, options?: { remote?: boolean }) {
   window.localStorage.setItem(KEY, JSON.stringify(state));
   window.dispatchEvent(new Event(EVENT));
+  if (!options?.remote && state.session?.mode === "auth" && state.session.userId) {
+    void import("@/lib/account").then((mod) => mod.pushAccount(state).catch(() => undefined));
+  }
 }
 
 export function updateDemo(change: (state: DemoState) => DemoState) {
@@ -94,7 +101,11 @@ export function useDemo(): DemoState | null {
   const [state, setState] = useState<DemoState | null>(null);
   useEffect(() => {
     const read = () => setState(loadDemo());
-    read();
+    void import("@/lib/account").then(async (mod) => {
+      const remote = await mod.hydrateFromAuth().catch(() => null);
+      if (remote) saveDemo(remote, { remote: true });
+      else read();
+    });
     window.addEventListener(EVENT, read);
     window.addEventListener("storage", read);
     return () => {

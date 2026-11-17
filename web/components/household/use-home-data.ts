@@ -48,6 +48,18 @@ export function useHomeData() {
     if (!supabase || !siteId) return;
     let stop = false;
     async function loadForecast() {
+      try {
+        const response = await fetch(`/api/household/forecast?site=${encodeURIComponent(siteId)}`);
+        if (response.ok) {
+          const body = (await response.json()) as { rows?: ForecastRow[] };
+          if (stop) return;
+          setError("");
+          setRows(body.rows ?? []);
+          return;
+        }
+      } catch {
+        // The public table read below is the fallback.
+      }
       const { data: latest, error: latestError } = await supabase!
         .from("forecasts")
         .select("issued_at")

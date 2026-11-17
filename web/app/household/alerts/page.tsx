@@ -1,19 +1,48 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IconAlert, IconCheck, IconInfo } from "@/components/household/icons";
 import { AppHeader, Frame, RequireDemo } from "@/components/household/shell";
 import { Segmented } from "@/components/household/ui";
 import { useHomeData } from "@/components/household/use-home-data";
 import { useDemo } from "@/lib/demo-store";
-import { buildAlerts } from "@/lib/household-derive";
+import { buildAlerts, type DerivedAlert } from "@/lib/household-derive";
 
 export default function AlertsPage() {
   const data = useHomeData();
   const demo = useDemo();
   const [filter, setFilter] = useState<"all" | "active" | "seen">("all");
-  const alerts = buildAlerts(data.rows ?? [], data.zone);
+  const [remote, setRemote] = useState<DerivedAlert[] | null>(null);
+  const [faultNote, setFaultNote] = useState("Inverter settings have not been read.");
+  useEffect(() => {
+    if (!data.siteId) return;
+    let stop = false;
+    void fetch(`/api/household/alerts?site=${encodeURIComponent(data.siteId)}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body) => {
+        if (!stop && body?.alerts) setRemote(body.alerts as DerivedAlert[]);
+      })
+      .catch(() => undefined);
+    void fetch(`/api/household/faults?site=${encodeURIComponent(data.siteId)}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body) => {
+        if (stop || !body) return;
+        const settings = (body.results ?? []).find((row: { rule?: string }) => row.rule === "settings");
+        const under = (body.results ?? []).find((row: { rule?: string }) => row.rule === "underperformance");
+        if (!settings && !under) {
+          setFaultNote(body.pending_migration ? "Fault results are not in the database yet." : "No fault check is stored for this home.");
+          return;
+        }
+        const label = under?.data_label ? ` ${under.data_label}.` : "";
+        setFaultNote(`Settings: ${settings?.status ?? "not_read"}. Output check: ${under?.status ?? "insufficient"}.${label}`);
+      })
+      .catch(() => undefined);
+    return () => {
+      stop = true;
+    };
+  }, [data.siteId, data.rows]);
+  const alerts = remote ?? buildAlerts(data.rows ?? [], data.zone);
   const seen = new Set(demo?.seenAlerts ?? []);
   const active = alerts.filter((alert) => !seen.has(alert.id));
   const resolved = alerts.filter((alert) => seen.has(alert.id));
@@ -62,7 +91,7 @@ export default function AlertsPage() {
               ))}
             </section>
           ) : null}
-          <p className="hh-note">An alert is active only while its forecast condition is still true. We will never ask you to open or reset the inverter.</p>
+          <p className="hh-note">{faultNote} An alert is active only while its forecast condition is still true. We will never ask you to open or reset the inverter.</p>
         </div>
       </RequireDemo>
     </Frame>

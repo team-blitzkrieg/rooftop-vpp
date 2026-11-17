@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
+import { rememberSite } from "@/lib/account";
 import { ApplianceCard } from "@/components/household/appliance-card";
 import { IconGrid, IconHome, IconOffline, IconSun } from "@/components/household/icons";
 import { MetricCard } from "@/components/household/metric-card";
@@ -17,6 +19,10 @@ import { schemeLabel, timingChangesBill } from "@/lib/scheme-rules";
 export default function HouseholdPage() {
   const data = useHomeData();
   const demo = useDemo();
+  useEffect(() => {
+    const userId = demo?.session?.mode === "auth" ? demo.session.userId : null;
+    if (userId && data.siteId) void rememberSite(userId, data.siteId);
+  }, [demo?.session?.mode, demo?.session?.userId, data.siteId]);
   if (data.supabaseMissing) {
     return (
       <main className="hh">

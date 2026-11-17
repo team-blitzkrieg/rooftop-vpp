@@ -154,4 +154,14 @@ python -m pytest
 python -m api.jobs forecast
 ```
 
-The last command exits 0 without `DATABASE_URL`. With the compose database it will look for a promoted model, find none, and leave any existing forecast where it is.
+The last command exits 0 without `DATABASE_URL`. With the compose database it will look for a promoted model, find none, and refresh the labelled simulated forecast instead of leaving the previous issue in place. A promoted model is left alone.
+
+## Household tables and the Pi
+
+`api/migrations/2026-11-17-household.sql` adds profiles, consent, loads, pauses, seen alerts, coordinator assignments, cases, fault results, and the ingest rate-limit table. Paste it in the Supabase SQL editor. Row level security lets a signed-in user read and write their own rows. `anon` can read `fault_results`. It still cannot read `readings` or `devices`.
+
+The Pi posts to `POST /api/ingest` on the Vercel app. The contract is `docs/edge-ingest.md`. Set `SUPABASE_SERVICE_ROLE_KEY` on the `rooftop-web` Vercel project only. Do not prefix it with `NEXT_PUBLIC_`.
+
+Email sign-in uses Supabase Auth (magic code). Demo sign-in stays in the browser and is labelled as a demo. In Authentication → Providers, email must stay enabled. The free project already includes that.
+
+The hourly forecast workflow connects with `DATABASE_URL`. If that secret is a URI with a stray parenthesis (a note copied from the dashboard), the job fails before it can write. The value has to be the pooler URI alone. When no model is promoted, the job refreshes the simulated forecast so `issued_at` moves. GitHub may still start the cron late; that delay is on GitHub's side.
