@@ -1,6 +1,5 @@
 "use client";
 
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 import {
   CartesianGrid,
@@ -24,18 +23,12 @@ import {
   type ForecastRow,
   type SiteRow,
 } from "@/lib/forecast";
+import { browserSupabase } from "@/lib/supabase";
 
 const HOUR_MS = 60 * 60 * 1000;
 
-function client(): SupabaseClient | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key);
-}
-
 export default function Page() {
-  const supabase = useMemo(() => client(), []);
+  const supabase = useMemo(() => browserSupabase(), []);
   const [sites, setSites] = useState<SiteRow[]>([]);
   const [siteId, setSiteId] = useState("");
   const [rows, setRows] = useState<ForecastRow[] | null>(null);
@@ -59,7 +52,12 @@ export default function Page() {
       }
       const list = (data ?? []) as SiteRow[];
       setSites(list);
-      setSiteId((current) => current || list[0]?.site_id || "");
+      const wanted = new URLSearchParams(window.location.search).get("site");
+      setSiteId((current) => {
+        if (current && list.some((site) => site.site_id === current)) return current;
+        if (wanted && list.some((site) => site.site_id === wanted)) return wanted;
+        return list[0]?.site_id || "";
+      });
       setLoading(false);
     }
 
@@ -145,7 +143,10 @@ export default function Page() {
         <div>
           <p className="eyebrow">Rooftops</p>
           <h1>Household forecast</h1>
-          <p className="sub">Next 48 hours. The page checks again once an hour.</p>
+          <p className="sub">
+            Next 48 hours. The page checks again once an hour.{" "}
+            <a href={siteId ? `/household?site=${encodeURIComponent(siteId)}` : "/household"}>Household status</a>
+          </p>
         </div>
         <div>
           <label htmlFor="site">Home</label>
