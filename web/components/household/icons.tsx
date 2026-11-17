@@ -89,6 +89,92 @@ export function IconSettings({ size, stroke }: IconProps) {
   );
 }
 
+export function IconBack({ size, stroke }: IconProps) {
+  return (
+    <Svg size={size} stroke={stroke}>
+      <path d="m15 18-6-6 6-6" />
+    </Svg>
+  );
+}
+
+export function IconClose({ size, stroke }: IconProps) {
+  return (
+    <Svg size={size} stroke={stroke}>
+      <path d="M18 6 6 18M6 6l12 12" />
+    </Svg>
+  );
+}
+
+export function IconPlus({ size, stroke }: IconProps) {
+  return (
+    <Svg size={size} stroke={stroke}>
+      <path d="M12 5v14M5 12h14" />
+    </Svg>
+  );
+}
+
+export function IconCheck({ size, stroke }: IconProps) {
+  return (
+    <Svg size={size} stroke={stroke}>
+      <path d="m5 12 5 5L20 7" />
+    </Svg>
+  );
+}
+
+export function IconMail({ size, stroke }: IconProps) {
+  return (
+    <Svg size={size} stroke={stroke}>
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="m22 7-10 6L2 7" />
+    </Svg>
+  );
+}
+
+export function IconLock({ size, stroke }: IconProps) {
+  return (
+    <Svg size={size} stroke={stroke}>
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </Svg>
+  );
+}
+
+export function IconEye({ size, stroke }: IconProps) {
+  return (
+    <Svg size={size} stroke={stroke}>
+      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </Svg>
+  );
+}
+
+export function IconAlert({ size, stroke }: IconProps) {
+  return (
+    <Svg size={size} stroke={stroke}>
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+      <path d="M12 9v4M12 17h.01" />
+    </Svg>
+  );
+}
+
+export function IconInfo({ size, stroke }: IconProps) {
+  return (
+    <Svg size={size} stroke={stroke}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4M12 8h.01" />
+    </Svg>
+  );
+}
+
+export function IconShield({ size, stroke }: IconProps) {
+  return (
+    <Svg size={size} stroke={stroke}>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="m9 12 2 2 4-4" />
+    </Svg>
+  );
+}
+
 export function IconOffline({ size, stroke }: IconProps) {
   return (
     <Svg size={size} stroke={stroke}>

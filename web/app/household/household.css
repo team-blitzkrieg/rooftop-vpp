@@ -177,7 +177,7 @@
 }
 
 .hh-flow.off .hh-node { border-color: #9ca3af; color: #6b7280; }
-.hh-flow.off .hh-flow-lines path,
+.hh-flow.off .hh-flow-lines path { stroke: #9ca3af; fill: none; }
 .hh-flow.off .hh-flow-lines circle { stroke: #9ca3af; fill: #9ca3af; }
 
 .hh-flow-lines { position: absolute; inset: 0; }
@@ -341,7 +341,7 @@
   bottom: 0;
 }
 
-.hh-tabs button {
+.hh-tabs a {
   flex: 1;
   border: 0;
   background: transparent;
@@ -354,9 +354,10 @@
   font-size: 11px;
   font-weight: 500;
   padding: 0;
+  text-decoration: none;
 }
 
-.hh-tabs button.on { color: #0268a8; font-weight: 600; }
+.hh-tabs a.on { color: #0268a8; font-weight: 600; }
 
 .hh-placeholder h2 { margin: 0 0 6px; font-size: 18px; }
 .hh-placeholder p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }

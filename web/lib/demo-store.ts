@@ -1,0 +1,104 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+const KEY = "rooftop-household-demo";
+const EVENT = "rooftop-demo";
+
+export type Load = {
+  id: string;
+  name: string;
+  watts: number;
+  minutes: number;
+  earliest: string;
+  deadline: string;
+  interruptible: boolean;
+  manualOnly: boolean;
+};
+
+export type ConsentScopes = {
+  solar: boolean;
+  grid: boolean;
+  home: boolean;
+  appliance: boolean;
+};
+
+export type DemoState = {
+  session: { email: string; signedInAt: string } | null;
+  consentSkipped: boolean;
+  consent: { version: string; agreedAt: string; scopes: ConsentScopes } | null;
+  profile: {
+    scheme: "net-metering" | "net-accounting" | "net-plus";
+    tariffLabel: string;
+    systemKw: string;
+    effective: string;
+  } | null;
+  loads: Load[];
+  paused: boolean;
+  pausedAt: string | null;
+  skipDay: string | null;
+  seenAlerts: string[];
+  withdrawReceipt: {
+    id: string;
+    email: string;
+    at: string;
+    deleteBy: string;
+  } | null;
+};
+
+const EMPTY: DemoState = {
+  session: null,
+  consentSkipped: false,
+  consent: null,
+  profile: null,
+  loads: [],
+  paused: false,
+  pausedAt: null,
+  skipDay: null,
+  seenAlerts: [],
+  withdrawReceipt: null,
+};
+
+export function loadDemo(): DemoState {
+  if (typeof window === "undefined") return EMPTY;
+  try {
+    const raw = window.localStorage.getItem(KEY);
+    if (!raw) return EMPTY;
+    return { ...EMPTY, ...JSON.parse(raw) };
+  } catch {
+    return EMPTY;
+  }
+}
+
+export function saveDemo(state: DemoState) {
+  window.localStorage.setItem(KEY, JSON.stringify(state));
+  window.dispatchEvent(new Event(EVENT));
+}
+
+export function updateDemo(change: (state: DemoState) => DemoState) {
+  saveDemo(change(loadDemo()));
+}
+
+export function clearDemoKeepReceipt() {
+  const current = loadDemo();
+  saveDemo({ ...EMPTY, withdrawReceipt: current.withdrawReceipt });
+}
+
+export function useDemo(): DemoState | null {
+  const [state, setState] = useState<DemoState | null>(null);
+  useEffect(() => {
+    const read = () => setState(loadDemo());
+    read();
+    window.addEventListener(EVENT, read);
+    window.addEventListener("storage", read);
+    return () => {
+      window.removeEventListener(EVENT, read);
+      window.removeEventListener("storage", read);
+    };
+  }, []);
+  return state;
+}
+
+export function loadEnergyKwh(load: Load): number {
+  return (load.watts / 1000) * (load.minutes / 60);
+}

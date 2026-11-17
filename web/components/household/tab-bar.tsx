@@ -1,26 +1,29 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { IconAlerts, IconHome, IconPlan, IconSavings, IconSettings } from "./icons";
 
 const TABS = [
-  { id: "home", label: "Home", icon: IconHome },
-  { id: "plan", label: "Plan", icon: IconPlan },
-  { id: "savings", label: "Savings", icon: IconSavings },
-  { id: "alerts", label: "Alerts", icon: IconAlerts },
-  { id: "settings", label: "Settings", icon: IconSettings },
+  { href: "/household", label: "Home", icon: IconHome },
+  { href: "/household/plan", label: "Plan", icon: IconPlan },
+  { href: "/household/savings", label: "Savings", icon: IconSavings },
+  { href: "/household/alerts", label: "Alerts", icon: IconAlerts },
+  { href: "/household/settings", label: "Settings", icon: IconSettings },
 ] as const;
 
-export type HouseholdTab = (typeof TABS)[number]["id"];
-
-export function TabBar({ tab, onChange }: { tab: HouseholdTab; onChange: (tab: HouseholdTab) => void }) {
+export function TabBar() {
+  const path = usePathname();
   return (
     <nav className="hh-tabs" aria-label="Sections">
       {TABS.map((item) => {
         const Icon = item.icon;
-        const active = tab === item.id;
+        const active = item.href === "/household" ? path === "/household" : path.startsWith(item.href);
         return (
-          <button key={item.id} type="button" className={active ? "on" : ""} aria-current={active ? "page" : undefined} onClick={() => onChange(item.id)}>
+          <Link key={item.href} href={item.href} className={active ? "on" : ""} aria-current={active ? "page" : undefined}>
             <Icon />
             <span>{item.label}</span>
-          </button>
+          </Link>
         );
       })}
     </nav>

@@ -1,6 +1,7 @@
-import { formatPower, type HouseholdSnapshot, type SourceBadge } from "@/lib/household";
+import type { HouseholdSnapshot, SourceBadge } from "@/lib/household";
 import { IconBattery, IconGrid, IconHome, IconLeaf, IconSun } from "./icons";
 import { SourcePill } from "./pills";
+import { CountUp } from "./ui";
 
 export function PowerFlow({
   snapshot,
@@ -10,10 +11,10 @@ export function PowerFlow({
   updated: string;
 }) {
   const offline = snapshot.mode === "offline";
-  const solar = formatPower(snapshot.solar.value, "kW");
-  const home = formatPower(snapshot.home.value, "kW");
-  const incoming = formatPower(snapshot.importing.value, "kW");
-  const outgoing = formatPower(snapshot.exporting.value, "kW");
+  const solar = snapshot.solar.value;
+  const home = snapshot.home.value;
+  const incoming = snapshot.importing.value;
+  const outgoing = snapshot.exporting.value;
   const share =
     snapshot.selfPoweredPct === null ? "—" : `${Math.round(snapshot.selfPoweredPct)}%`;
 
@@ -25,11 +26,11 @@ export function PowerFlow({
       </div>
       <div className={`hh-flow ${offline ? "off" : ""}`}>
         <svg className="hh-flow-lines" viewBox="0 0 296 312" fill="none" aria-hidden="true">
-          <path d="M148 96V220" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" fill="none" />
-          <path d="M76 166H220" stroke="#488fc2" strokeOpacity="0.4" strokeWidth="1.5" fill="none" />
-          <path d="M40 96V122" stroke="#0f9d58" strokeWidth="1.5" fill="none" />
-          <path d="M156 96V128Q156 152 180 152H220" stroke="#ff9800" strokeWidth="1.5" fill="none" />
-          <path d="M140 96V128Q140 152 116 152H76" stroke="#a280db" strokeWidth="1.5" fill="none" />
+          <path className="hh-flow-idle" d="M148 96V220" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" fill="none" />
+          <path className="hh-flow-move" d="M76 166H220" stroke="#488fc2" strokeOpacity="0.4" strokeWidth="1.5" fill="none" />
+          <path className="hh-flow-move" d="M40 96V122" stroke="#0f9d58" strokeWidth="1.5" fill="none" />
+          <path className="hh-flow-move" d="M156 96V128Q156 152 180 152H220" stroke="#ff9800" strokeWidth="1.5" fill="none" />
+          <path className="hh-flow-move" d="M140 96V128Q140 152 116 152H76" stroke="#a280db" strokeWidth="1.5" fill="none" />
           <circle cx="196" cy="152" r="4" fill="#ff9800" />
           <circle cx="98" cy="152" r="4" fill="#a280db" />
           <circle cx="156" cy="114" r="3" fill="#ff9800" />
@@ -46,16 +47,16 @@ export function PowerFlow({
         </div>
         <div className="hh-node sol">
           <IconSun size={16} />
-          <strong>{solar}</strong>
+          <strong><CountUp value={solar} suffix="kW" /></strong>
         </div>
         <div className="hh-node gr">
           <IconGrid size={14} />
-          <strong>← {incoming}</strong>
-          <strong>→ {outgoing}</strong>
+          <strong>← <CountUp value={incoming} suffix="kW" /></strong>
+          <strong>→ <CountUp value={outgoing} suffix="kW" /></strong>
         </div>
         <div className="hh-node hm">
           <IconHome size={16} />
-          <strong>{home}</strong>
+          <strong><CountUp value={home} suffix="kW" /></strong>
         </div>
         <div className="hh-node bat">
           <IconBattery size={16} />
