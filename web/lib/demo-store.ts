@@ -21,6 +21,7 @@ export type ConsentScopes = {
   grid: boolean;
   home: boolean;
   appliance: boolean;
+  totals: boolean;
 };
 
 export type DemoState = {
@@ -28,11 +29,15 @@ export type DemoState = {
   consentSkipped: boolean;
   consent: { version: string; agreedAt: string; scopes: ConsentScopes } | null;
   profile: {
+    connection: "new" | "existing";
     scheme: "net-metering" | "net-accounting" | "net-plus";
     tariffLabel: string;
     systemKw: string;
     effective: string;
+    agreementEnds: string;
+    touMeter: boolean;
   } | null;
+  notifyAlerts: boolean;
   loads: Load[];
   paused: boolean;
   pausedAt: string | null;
@@ -52,6 +57,7 @@ const EMPTY: DemoState = {
   consent: null,
   profile: null,
   loads: [],
+  notifyAlerts: true,
   paused: false,
   pausedAt: null,
   skipDay: null,

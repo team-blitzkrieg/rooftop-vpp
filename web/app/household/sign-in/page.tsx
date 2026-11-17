@@ -81,6 +81,7 @@ export default function SignInPage() {
             Request pilot credentials
           </button>
         </div>
+        <a className="hh-link" href="/household/help" style={{ textAlign: "center" }}>Help and contact</a>
         <p className="hh-note" style={{ marginTop: "auto", textAlign: "center" }}>
           Read-only pilot · we never switch or control your devices.
         </p>

@@ -30,6 +30,8 @@ export type PlanModel = {
   flexibleKwh: number;
   pvKwh: number;
   windowLabel: string | null;
+  /** Highest hour where planned load kW exceeds that hour's forecast PV. */
+  overload: { hour: string; loadKw: number; pvKw: number } | null;
 };
 
 export type DerivedAlert = {
@@ -39,6 +41,8 @@ export type DerivedAlert = {
   detail: string;
   firstSeen: string;
   source: SourceBadge;
+  kwhGap: number | null;
+  day: string | null;
 };
 
 function rowsFor(rows: ForecastRow[], target: string) {
@@ -155,29 +159,35 @@ export function buildPlan(rows: ForecastRow[], timeZone: string, loads: Load[], 
   const flexible = loads.filter((load) => !load.manualOnly);
   const flexibleKwh = flexible.reduce((sum, load) => sum + loadEnergyKwh(load), 0);
   if (paused) {
-    return { status: "paused", placed: [], flexibleKwh, pvKwh, windowLabel: null };
+    return { status: "paused", placed: [], flexibleKwh, pvKwh, windowLabel: null, overload: null };
   }
   if (loads.length === 0) {
-    return { status: "empty", placed: [], flexibleKwh: 0, pvKwh, windowLabel: null };
+    return { status: "empty", placed: [], flexibleKwh: 0, pvKwh, windowLabel: null, overload: null };
   }
-  const placed: PlacedLoad[] = loads.map((load) => {
+  const usedKw = new Array(pv.length).fill(0);
+  const ordered = [...loads].sort((a, b) => loadEnergyKwh(b) - loadEnergyKwh(a));
+  const placed: PlacedLoad[] = ordered.map((load) => {
     if (load.manualOnly) {
       return { load, start: load.earliest, end: load.deadline, pvKwh: 0, status: "manual" };
     }
     const duration = Math.max(1, Math.round(load.minutes / 60));
+    const loadKw = load.watts / 1000;
     const earliest = parseClock(load.earliest);
     const deadline = parseClock(load.deadline);
     let best: { index: number; pvKwh: number } | null = null;
     for (let index = 0; index <= pv.length - duration; index += 1) {
       const block = pv.slice(index, index + duration);
-      const startMin = block[0].parts.clock.split(":").map(Number);
-      const start = startMin[0] * 60 + startMin[1];
+      const startParts = block[0].parts.clock.split(":").map(Number);
+      const start = startParts[0] * 60 + startParts[1];
       const end = start + duration * 60;
       if (start < earliest || end > deadline + 60) continue;
+      const fits = block.every((item, offset) => Number(item.row.value_kw) + 0.05 >= usedKw[index + offset] + loadKw);
+      if (!fits) continue;
       const blockPv = block.reduce((sum, item) => sum + Number(item.row.value_kw), 0);
       if (!best || blockPv > best.pvKwh) best = { index, pvKwh: blockPv };
     }
-    if (!best) return { load, start: load.earliest, end: load.deadline, pvKwh: 0, status: "unplaced" };
+    if (!best) return { load, start: load.earliest, end: load.deadline, pvKwh: 0, status: "unplaced" as const };
+    for (let offset = 0; offset < duration; offset += 1) usedKw[best.index + offset] += loadKw;
     const block = pv.slice(best.index, best.index + duration);
     const energy = loadEnergyKwh(load);
     return {
@@ -185,13 +195,20 @@ export function buildPlan(rows: ForecastRow[], timeZone: string, loads: Load[], 
       start: block[0].parts.clock,
       end: block[block.length - 1].parts.clock.replace(/^\d+/, (hour) => String(Number(hour) + 1).padStart(2, "0")),
       pvKwh: best.pvKwh,
-      status: best.pvKwh >= energy ? "recommended" : "partial",
+      status: best.pvKwh >= energy ? "recommended" as const : "partial" as const,
     };
+  });
+  let overload: PlanModel["overload"] = null;
+  pv.forEach((item, index) => {
+    const pvKw = Number(item.row.value_kw);
+    if (usedKw[index] > pvKw + 0.05 && !overload) {
+      overload = { hour: item.parts.clock, loadKw: usedKw[index], pvKw };
+    }
   });
   const usable = placed.filter((item) => item.status === "recommended" || item.status === "partial");
   const low = flexible.length > 0 && usable.length === 0;
   const window = usable[0] ? `${usable[0].start} – ${usable[0].end}` : null;
-  return { status: low ? "low-solar" : "ready", placed, flexibleKwh, pvKwh, windowLabel: window };
+  return { status: low ? "low-solar" : "ready", placed, flexibleKwh, pvKwh, windowLabel: window, overload };
 }
 
 export function buildAlerts(rows: ForecastRow[], timeZone: string, now = new Date()): DerivedAlert[] {
@@ -208,18 +225,22 @@ export function buildAlerts(rows: ForecastRow[], timeZone: string, now = new Dat
         : "This home has no forecast yet. This is not a meter alarm.",
       firstSeen: issued ?? now.toISOString(),
       source: estimated,
+      kwhGap: null,
+      day: null,
     });
   }
-  const nowKey = zonedParts(now.toISOString(), timeZone).key;
-  const hasNow = rows.some((row) => zonedParts(row.timestamp, timeZone).key === nowKey);
+  const nowParts = zonedParts(now.toISOString(), timeZone);
+  const hasNow = rows.some((row) => zonedParts(row.timestamp, timeZone).key === nowParts.key);
   if (rows.length > 0 && !hasNow) {
     alerts.push({
       id: "missing-hour",
       level: "info",
       title: "No forecast for this hour",
-      detail: "The latest forecast does not include the current hour. Readings are not available with this key.",
+      detail: `The latest forecast has no row for ${nowParts.day} ${nowParts.clock}. History marks that same hour as "No forecast". Readings are not available with this key.`,
       firstSeen: issued ?? now.toISOString(),
       source: estimated,
+      kwhGap: null,
+      day: nowParts.day,
     });
   }
   const pv = rowsFor(rows, "pv");
@@ -236,6 +257,8 @@ export function buildAlerts(rows: ForecastRow[], timeZone: string, now = new Dat
       detail: `Today's PV forecast is ${forecastSum.toFixed(1)} kWh against a ${baselineSum.toFixed(1)} kWh baseline. This compares two forecasts. It is not a measured fault.`,
       firstSeen: issued ?? now.toISOString(),
       source: estimated,
+      kwhGap: Math.round((baselineSum - forecastSum) * 10) / 10,
+      day: today,
     });
   }
   return alerts;

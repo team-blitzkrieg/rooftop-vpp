@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { useDemo } from "@/lib/demo-store";
 import { formatSystemKw, type SiteDetail } from "@/lib/household";
+import { copy } from "@/lib/copy";
 import { ExamplePill, StatusPill } from "./pills";
 import { TabBar } from "./tab-bar";
 
@@ -50,6 +51,7 @@ export function AppHeader({
       </div>
       <div className="hh-hdr-side">
         {action}
+        <span className="hh-pill example">{copy.mode}</span>
         {offline === undefined ? null : <StatusPill offline={offline} />}
         {simulated ? <ExamplePill /> : null}
       </div>

@@ -6,6 +6,7 @@ import { CountUp, Segmented } from "@/components/household/ui";
 import { useHomeData } from "@/components/household/use-home-data";
 import { useDemo } from "@/lib/demo-store";
 import { addDays, hoursForDay, rangeDays, sumHours, todayKey } from "@/lib/household-derive";
+import { feedInLkr, schemeLabel, schemeWhy, type Scheme } from "@/lib/scheme-rules";
 
 export default function SavingsPage() {
   const data = useHomeData();
@@ -18,8 +19,16 @@ export default function SavingsPage() {
   const days = span === "week" ? rangeDays(addDays(today, -6), today) : span === "month" ? rangeDays(`${today.slice(0, 8)}01`, today) : rangeDays(addDays(today, -30), today);
   const hours = (data.rows ?? []).length ? days.flatMap((day) => hoursForDay(data.rows ?? [], zone, day)) : [];
   const totals = sumHours(hours);
+  const scheme: Scheme = demo?.profile?.scheme ?? "net-plus";
+  const systemKw = Number(demo?.profile?.systemKw || data.site?.system_kw || 0);
+  const fit = feedInLkr(systemKw > 0 ? systemKw : 5);
   const assumed = Number(rate);
-  const lkr = totals && Number.isFinite(assumed) && assumed > 0 ? Math.round(totals.imported * assumed) : null;
+  const generated = totals?.pv == null ? null : Math.round(totals.pv * 10) / 10;
+  const usedAtHome = totals?.solarUsed == null ? null : Math.round(totals.solarUsed * 10) / 10;
+  const netPlusIncome = generated === null ? null : Math.round(generated * fit);
+  const accounting = usedAtHome !== null && Number.isFinite(assumed) && assumed > fit
+    ? Math.round(usedAtHome * (assumed - fit))
+    : null;
 
   return (
     <Frame>
@@ -37,11 +46,31 @@ export default function SavingsPage() {
               { id: "pilot", label: "Pilot" },
             ]}
           />
+          <p className="hh-note">{schemeLabel(scheme)}. {schemeWhy(scheme)} {demo?.profile ? "" : "No scheme is saved yet, so this uses the Net Plus version."}</p>
           <section className="hh-card">
-            <p className="hh-fine">Forecast solar used at home</p>
-            <strong style={{ fontSize: 28 }}><CountUp value={totals?.solarUsed ?? null} suffix="kWh" /></strong>
-            <p className="hh-note">Usual column is blank. There is no pre-pilot measured history in this app.</p>
-            <span className="hh-pill estimated">Verification pending</span>
+            {scheme === "net-plus" ? (
+              <>
+                <p className="hh-fine">Forecast export income</p>
+                <strong style={{ fontSize: 28 }}>{netPlusIncome === null ? "—" : `LKR ${netPlusIncome.toLocaleString("en-LK")}`}</strong>
+                <p className="hh-note">{generated === null ? "No PV forecast in this range." : `${generated.toFixed(1)} kWh × LKR ${fit} (feed-in for this system size). Not a payment advice.`}</p>
+                <p className="hh-note">Income at risk from faults is not measured here. The settings check has not read an inverter.</p>
+              </>
+            ) : null}
+            {scheme === "net-metering" ? (
+              <>
+                <p className="hh-fine">Forecast solar used at home</p>
+                <strong style={{ fontSize: 28 }}><CountUp value={usedAtHome} suffix="kWh" /></strong>
+                <p className="hh-note">No rupee saving is shown. Banked export changes with timing, and this app does not turn that into a bill.</p>
+              </>
+            ) : null}
+            {scheme === "net-accounting" ? (
+              <>
+                <p className="hh-fine">Forecast solar used at home</p>
+                <strong style={{ fontSize: 28 }}><CountUp value={usedAtHome} suffix="kWh" /></strong>
+                <p className="hh-note">{accounting === null ? "Enter a buy rate below to see an assumed rupee difference after lost export income." : `Assumed difference LKR ${accounting.toLocaleString("en-LK")}: your buy rate minus LKR ${fit} feed-in, times solar used at home.`}</p>
+              </>
+            ) : null}
+            <span className="hh-pill estimated">Forecast × published rate</span>
           </section>
           <section className="hh-card">
             <table className="hh-table">
@@ -60,20 +89,21 @@ export default function SavingsPage() {
             </button>
             {open ? (
               <>
-                <p className="hh-note">Import is the sum of positive net (demand minus PV) on forecast hours. Export is the sum of the negative side. Household use is the demand forecast. Scheme label: {demo?.profile?.scheme ?? "not set"}.</p>
-                <div className="hh-field">
-                  <label htmlFor="rate">Assumed LKR per imported kWh</label>
-                  <div className="hh-input"><input id="rate" inputMode="decimal" value={rate} placeholder="Leave blank" onChange={(event) => setRate(event.target.value)} /></div>
-                  <p className="hh-local">Optional assumption you type. It is not your CEB bill and not a verified tariff.</p>
-                </div>
-                <p className="hh-note">{lkr === null ? "LKR stays hidden until you enter an assumption." : `Assumed import cost: LKR ${lkr.toLocaleString("en-LK")}. This is your rate times forecast import.`}</p>
+                <p className="hh-note">Import, export and demand are sums of forecast hours. Usual is blank because there is no measured pre-pilot history. Feed-in used here is LKR {fit} per kWh for a {systemKw || "—"} kW system.</p>
+                {scheme === "net-accounting" ? (
+                  <div className="hh-field">
+                    <label htmlFor="rate">Assumed buy rate, LKR per kWh</label>
+                    <div className="hh-input"><input id="rate" inputMode="decimal" value={rate} placeholder="Leave blank" onChange={(event) => setRate(event.target.value)} /></div>
+                    <p className="hh-local">You type this. It is not a CEB slab. The difference subtracts LKR {fit} of export income given up.</p>
+                  </div>
+                ) : <p className="hh-note">This scheme does not turn a typed buy rate into a saving.</p>}
               </>
             ) : null}
           </section>
           <div className="hh-banner warn">
             <div>
-              <strong>kWh-only until verification</strong>
-              <p>Site verification is pending. The headline stays in kWh.</p>
+              <strong>{scheme === "net-metering" ? "kWh only for Net Metering" : "Verification pending"}</strong>
+              <p>{scheme === "net-plus" ? "The rupee line is forecast kWh times the published feed-in rate. It is not money shifted by the plan." : "Site verification is pending. Nothing here is a CEB bill."}</p>
             </div>
           </div>
         </div>

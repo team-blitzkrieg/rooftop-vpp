@@ -11,9 +11,12 @@ import { CountUp } from "@/components/household/ui";
 import { useHomeData } from "@/components/household/use-home-data";
 import { formatIssued } from "@/lib/forecast";
 import { dominantGrid, formatUpdated } from "@/lib/household";
+import { useDemo } from "@/lib/demo-store";
+import { schemeLabel, timingChangesBill } from "@/lib/scheme-rules";
 
 export default function HouseholdPage() {
   const data = useHomeData();
+  const demo = useDemo();
   if (data.supabaseMissing) {
     return (
       <main className="hh">
@@ -87,10 +90,16 @@ export default function HouseholdPage() {
                 historyHref={historyHref}
                 footnote={snapshot.issuedAt ? `Issued ${formatIssued(snapshot.issuedAt, data.zone)}` : "No forecast issued"}
               />
-              {forecast.length > 0 ? (
+              {forecast.length > 0 && timingChangesBill(demo?.profile?.scheme) ? (
                 <Link href="/household/forecast" className="hh-plain">
                   <ApplianceCard window={snapshot.window} timeZone={data.zone} />
                 </Link>
+              ) : null}
+              {forecast.length > 0 && !timingChangesBill(demo?.profile?.scheme) ? (
+                <section className="hh-card">
+                  <h2>No best time to run appliances</h2>
+                  <p className="hh-note">{schemeLabel(demo?.profile?.scheme ?? "net-plus")} does not save money by moving appliance use into the solar window.</p>
+                </section>
               ) : null}
             </>
           ) : null}

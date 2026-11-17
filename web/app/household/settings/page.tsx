@@ -70,7 +70,13 @@ export default function SettingsPage() {
           </section>
           <section className="hh-card">
             <Link className="hh-row-link" href="/household/profile"><span className="hh-grow"><strong>Site profile</strong><span>{demo?.profile ? `${demo.profile.scheme} · ${demo.profile.systemKw || "—"} kW · pending` : "Not saved on this browser"}</span></span><span>›</span></Link>
-            <Link className="hh-row-link" href="/household/battery"><span className="hh-grow"><strong>Battery scenario</strong><span>No battery model in this forecast</span></span><span>›</span></Link>
+            <Link className="hh-row-link" href="/household/battery"><span className="hh-grow"><strong>Battery scenario</strong><span>Homes do not get the large-plant battery rate</span></span><span>›</span></Link>
+            <Link className="hh-row-link" href="/household/settings-check"><span className="hh-grow"><strong>Inverter settings</strong><span>Not read from a device</span></span><span>›</span></Link>
+            <Link className="hh-row-link" href="/household/help"><span className="hh-grow"><strong>Help and contact</strong><span>No installer is stored</span></span><span>›</span></Link>
+            <Link className="hh-row-link" href="/household/notifications"><span className="hh-grow"><strong>Notifications</strong><span>{demo?.notifyAlerts ? "Forecast alerts on" : "Forecast alerts off"}</span></span><span>›</span></Link>
+            <Link className="hh-row-link" href="/household/utility"><span className="hh-grow"><strong>Utility view</strong><span>Simulated feeder results</span></span><span>›</span></Link>
+            <Link className="hh-row-link" href="/household/coordinator"><span className="hh-grow"><strong>Coordinator</strong><span>Sites and local consent</span></span><span>›</span></Link>
+            <Link className="hh-row-link" href="/household/technician"><span className="hh-grow"><strong>Technician</strong><span>Brands, registers, safety</span></span><span>›</span></Link>
             <Link className="hh-row-link" href="/household/components"><span className="hh-grow"><strong>Component sheet</strong><span>Shared controls used in this app</span></span><span>›</span></Link>
             <div className="hh-row-link"><span className="hh-grow"><strong>Account</strong><span>{demo?.session?.email}</span></span></div>
           </section>
@@ -85,6 +91,7 @@ export default function SettingsPage() {
           <li>Does not delete forecast rows.</li>
           <li>Does not stop an edge unit, because this app never starts one.</li>
           <li>Signs you out of this demo.</li>
+          <li>{demo?.consent?.scopes.totals ? "Anonymised totals were included in the consent on this browser. Nothing was written to Supabase." : "Anonymised totals were not consented, and none are kept."}</li>
         </ul>
         <p className="hh-note">Your solar system is not affected. Type WITHDRAW to confirm.</p>
         <div className="hh-input">

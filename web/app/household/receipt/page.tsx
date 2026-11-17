@@ -37,7 +37,7 @@ export default function ReceiptPage() {
             <Row k="Account" v={demo?.session?.email ?? "—"} />
             <Row k="Storage" v="This browser only" />
             <p className="hh-fine">Scopes</p>
-            <p className="hh-note">{consent?.scopes.solar ? "Solar output" : "Solar hidden"} · {consent?.scopes.grid ? "Grid" : "Grid hidden"} · {consent?.scopes.home ? "Household use" : "Household hidden"} · Appliance-level not available</p>
+            <p className="hh-note">{consent?.scopes.solar ? "Solar output" : "Solar hidden"} · {consent?.scopes.grid ? "Grid" : "Grid hidden"} · {consent?.scopes.home ? "Household use" : "Household hidden"} · Appliance-level not available · {consent?.scopes.totals ? "Anonymised totals included" : "Anonymised totals not included"}</p>
           </section>
           <Button type="button" onClick={() => router.push("/household/profile")}>Continue</Button>
           <button type="button" className="hh-btn ghost" onClick={() => setOpen(true)}>Download receipt (PDF)</button>
