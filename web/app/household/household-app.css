@@ -108,10 +108,13 @@
 .hh-input.err { border-color: #ef5350; }
 .hh-input:focus-within { border-color: #03a9f4; }
 .hh-help { font-size: 12px; color: #b71c1c; margin: 0; }
-.hh-icon-btn { border: 0; background: transparent; color: #6b7280; font: inherit; cursor: pointer; padding: 4px; }
+.hh-icon-btn { border: 0; background: transparent; color: #6b7280; font: inherit; cursor: pointer; min-width: 44px; min-height: 44px; }
+.hh-seg button { min-height: 44px; }
+.hh-toggle { position: relative; }
+.hh-toggle::after { content: ""; position: absolute; inset: -10px; }
 
 .hh-banner.info { background: #03a9f41a; border-color: #03a9f466; color: #0268a8; }
-.hh-banner.warn { background: #ffa60022; border-color: #ffa600; color: #a14a07; }
+.hh-banner.warn { background: #ffa60022; border-color: #ffa600; color: #7c2d12; }
 
 .hh-scrim {
   position: fixed;

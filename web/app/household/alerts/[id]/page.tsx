@@ -10,6 +10,7 @@ import { useHomeData } from "@/components/household/use-home-data";
 import { updateDemo, useDemo } from "@/lib/demo-store";
 import { buildAlerts, todayKey } from "@/lib/household-derive";
 import { zonedParts } from "@/lib/household";
+import { feedInLkr } from "@/lib/scheme-rules";
 
 export default function AlertDetailPage() {
   const params = useParams<{ id: string }>();
@@ -60,6 +61,12 @@ export default function AlertDetailPage() {
               <section className="hh-card">
                 <h2>Why we flagged this</h2>
                 <p className="hh-note">{alert.detail}</p>
+                {alert.kwhGap !== null && demo?.profile?.scheme === "net-plus" ? (
+                  <p className="hh-note">
+                    About LKR {Math.round(alert.kwhGap * feedInLkr(Number(demo.profile.systemKw) || 5)).toLocaleString("en-LK")} of feed-in income is the gap between today's PV forecast and its baseline ({alert.kwhGap} kWh). This is not a measured loss and not a bill.
+                  </p>
+                ) : null}
+                <p className="hh-local">Active means this forecast condition is still true. Marking it seen does not call it resolved while it remains.</p>
               </section>
               {chart.length ? (
                 <section className="hh-card">

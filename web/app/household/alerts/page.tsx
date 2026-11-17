@@ -34,8 +34,9 @@ export default function AlertsPage() {
               { id: "seen", label: `Seen ${resolved.length}` },
             ]}
           />
+          {demo && !demo.notifyAlerts ? <p className="hh-note">Forecast alerts are hidden on this browser. Turn them on under Notifications. The conditions are unchanged.</p> : null}
           {data.rows === null ? <div className="hh-skel hh-skel-card" /> : null}
-          {data.rows && shown.length === 0 ? (
+          {data.rows && demo?.notifyAlerts !== false && shown.length === 0 ? (
             <section className="hh-card" style={{ textAlign: "center", padding: 28 }}>
               <div className="hh-iconbox" style={{ background: "#43a04722", margin: "0 auto", width: 56, height: 56, borderRadius: 28 }}>
                 <IconCheck size={26} stroke="#2a7130" />
@@ -47,7 +48,7 @@ export default function AlertsPage() {
               ) : null}
             </section>
           ) : null}
-          {shown.length ? (
+          {demo?.notifyAlerts !== false && shown.length ? (
             <section className="hh-card">
               {shown.map((alert) => (
                 <Link key={alert.id} href={`/household/alerts/${alert.id}`} className="hh-choice">
@@ -61,7 +62,7 @@ export default function AlertsPage() {
               ))}
             </section>
           ) : null}
-          <p className="hh-note">Alerts are derived from the forecast. We will never ask you to open or reset the inverter.</p>
+          <p className="hh-note">An alert is active only while its forecast condition is still true. We will never ask you to open or reset the inverter.</p>
         </div>
       </RequireDemo>
     </Frame>

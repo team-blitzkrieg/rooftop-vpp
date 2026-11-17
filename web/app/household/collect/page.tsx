@@ -10,7 +10,7 @@ import { updateDemo, type ConsentScopes } from "@/lib/demo-store";
 
 export default function CollectPage() {
   const router = useRouter();
-  const [scopes, setScopes] = useState<ConsentScopes>({ solar: true, grid: true, home: true, appliance: false });
+  const [scopes, setScopes] = useState<ConsentScopes>({ solar: true, grid: true, home: true, appliance: false, totals: true });
   const [note, setNote] = useState("");
 
   function toggle(key: keyof ConsentScopes) {
@@ -49,13 +49,14 @@ export default function CollectPage() {
             <Scope on={scopes.grid} label="Grid import and export" detail="Derived from forecast net (demand minus PV)" tag="Forecast" onClick={() => toggle("grid")} />
             <Scope on={scopes.home} label="Household use" detail="Hourly demand from the forecast" tag="Forecast" onClick={() => toggle("home")} />
             <Scope on={false} label="Appliance-level use" detail="This forecast has no per-appliance series" tag="Not available" disabled />
+            <Scope on={scopes.totals} label="Anonymised pilot totals" detail="Kept after you leave, with no name attached. Stored on this browser only until a reviewed policy exists." tag="Optional" onClick={() => toggle("totals")} />
           </section>
           <div className="hh-banner info">
             <IconInfo size={16} stroke="#0268a8" />
             <p>Readings are not available with the public key. Consent here is stored on this browser only.</p>
           </div>
           {note ? <p className="hh-help">{note}</p> : null}
-          <p className="hh-note">No camera, microphone or location. Required scopes stay selected.</p>
+          <p className="hh-note">No camera, microphone or location. Raw forecast detail is described as 90 days, with hourly totals kept until the pilot ends. This is the pilot plan, not a legal opinion. Required scopes stay selected.</p>
           <div className="hh-actions">
             <Button type="button" variant="secondary" onClick={skip}>Not now</Button>
             <Button type="button" onClick={accept}>Accept and continue</Button>
@@ -74,7 +75,7 @@ function Scope({ on, label, detail, tag, onClick, disabled }: { on: boolean; lab
         <strong>{label}</strong>
         <span>{detail}</span>
       </span>
-      <span className={`hh-pill ${tag === "Not available" ? "none" : "estimated"}`}>{tag}</span>
+      <span className={`hh-pill ${tag === "Not available" || tag === "Optional" ? "none" : "estimated"}`}>{tag}</span>
     </button>
   );
 }

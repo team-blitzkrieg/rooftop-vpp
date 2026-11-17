@@ -1,0 +1,152 @@
+{
+  "source": "grid-sim/results/hourly_share_60.csv",
+  "scenario": "share_60 no_control",
+  "day": "2025-02-11",
+  "note": "Simulated 50-home feeder. Not a real transformer.",
+  "hours": [
+    {
+      "hour": "00:00",
+      "voltagePu": 1.0171,
+      "loadingPct": 8.8676,
+      "pvKw": 0
+    },
+    {
+      "hour": "01:00",
+      "voltagePu": 1.0174,
+      "loadingPct": 7.8545,
+      "pvKw": 0
+    },
+    {
+      "hour": "02:00",
+      "voltagePu": 1.0175,
+      "loadingPct": 7.6743,
+      "pvKw": 0
+    },
+    {
+      "hour": "03:00",
+      "voltagePu": 1.0175,
+      "loadingPct": 7.8229,
+      "pvKw": 0
+    },
+    {
+      "hour": "04:00",
+      "voltagePu": 1.0169,
+      "loadingPct": 9.5165,
+      "pvKw": 0
+    },
+    {
+      "hour": "05:00",
+      "voltagePu": 1.0152,
+      "loadingPct": 14.5619,
+      "pvKw": 0
+    },
+    {
+      "hour": "06:00",
+      "voltagePu": 1.0137,
+      "loadingPct": 19.2138,
+      "pvKw": 0
+    },
+    {
+      "hour": "07:00",
+      "voltagePu": 1.0169,
+      "loadingPct": 8.0534,
+      "pvKw": 11.3088
+    },
+    {
+      "hour": "08:00",
+      "voltagePu": 1.0407,
+      "loadingPct": 32.5158,
+      "pvKw": 45.9575
+    },
+    {
+      "hour": "09:00",
+      "voltagePu": 1.0593,
+      "loadingPct": 61.3459,
+      "pvKw": 76.2662
+    },
+    {
+      "hour": "10:00",
+      "voltagePu": 1.072,
+      "loadingPct": 82.0705,
+      "pvKw": 98.9489
+    },
+    {
+      "hour": "11:00",
+      "voltagePu": 1.0806,
+      "loadingPct": 96.2556,
+      "pvKw": 113.4228
+    },
+    {
+      "hour": "12:00",
+      "voltagePu": 1.0833,
+      "loadingPct": 99.8635,
+      "pvKw": 119.7592
+    },
+    {
+      "hour": "13:00",
+      "voltagePu": 1.0818,
+      "loadingPct": 98.4903,
+      "pvKw": 117.7349
+    },
+    {
+      "hour": "14:00",
+      "voltagePu": 1.0763,
+      "loadingPct": 89.2399,
+      "pvKw": 107.6475
+    },
+    {
+      "hour": "15:00",
+      "voltagePu": 1.0674,
+      "loadingPct": 74.8053,
+      "pvKw": 90.458
+    },
+    {
+      "hour": "16:00",
+      "voltagePu": 1.0506,
+      "loadingPct": 47.9412,
+      "pvKw": 63.7825
+    },
+    {
+      "hour": "17:00",
+      "voltagePu": 1.0322,
+      "loadingPct": 20.484,
+      "pvKw": 36.9551
+    },
+    {
+      "hour": "18:00",
+      "voltagePu": 1.0088,
+      "loadingPct": 33.4391,
+      "pvKw": 5.394
+    },
+    {
+      "hour": "19:00",
+      "voltagePu": 1.0052,
+      "loadingPct": 45.0667,
+      "pvKw": 0
+    },
+    {
+      "hour": "20:00",
+      "voltagePu": 1.0064,
+      "loadingPct": 41.1182,
+      "pvKw": 0
+    },
+    {
+      "hour": "21:00",
+      "voltagePu": 1.0083,
+      "loadingPct": 35.2827,
+      "pvKw": 0
+    },
+    {
+      "hour": "22:00",
+      "voltagePu": 1.0138,
+      "loadingPct": 18.9668,
+      "pvKw": 0
+    },
+    {
+      "hour": "23:00",
+      "voltagePu": 1.0161,
+      "loadingPct": 11.8952,
+      "pvKw": 0
+    }
+  ]
+}

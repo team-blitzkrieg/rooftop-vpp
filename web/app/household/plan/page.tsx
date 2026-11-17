@@ -7,7 +7,8 @@ import { AppHeader, Frame, RequireDemo } from "@/components/household/shell";
 import { Button, Modal, Segmented, Sheet } from "@/components/household/ui";
 import { useHomeData } from "@/components/household/use-home-data";
 import { updateDemo, useDemo } from "@/lib/demo-store";
-import { buildPlan, dayLabel, todayKey } from "@/lib/household-derive";
+import { buildPlan, dayLabel, hoursForDay, sumHours, todayKey, addDays } from "@/lib/household-derive";
+import { schemeLabel, schemeWhy, timingChangesBill } from "@/lib/scheme-rules";
 
 export default function PlanPage() {
   const data = useHomeData();
@@ -21,7 +22,14 @@ export default function PlanPage() {
   const zone = data.zone;
   const today = todayKey(zone);
   const skipped = demo?.skipDay === today;
+  const scheme = demo?.profile?.scheme ?? "net-plus";
+  const timingHelps = timingChangesBill(scheme);
   const plan = buildPlan(data.rows ?? [], zone, demo?.loads ?? [], Boolean(demo?.paused) || skipped);
+  const otherDays = [1, 2, 3].map((offset) => {
+    const day = addDays(today, offset);
+    const sum = sumHours(hoursForDay(data.rows ?? [], zone, day));
+    return { day, pv: sum?.pv ?? null };
+  }).filter((item) => item.pv !== null);
 
   function applyChoice() {
     if (choice === "skip") {
@@ -89,15 +97,26 @@ export default function PlanPage() {
               <Link className="hh-btn primary" href="/household/loads/new">Add load</Link>
             </section>
           ) : null}
-          {demo && data.rows && plan.status === "low-solar" ? (
+          {demo && data.rows && !timingHelps ? (
+            <section className="hh-card">
+              <h2>No saving from timing under {schemeLabel(scheme)}</h2>
+              <p className="hh-note">{schemeWhy(scheme)}</p>
+              <p className="hh-local">{demo.profile?.touMeter ? "A time-of-use meter is ticked, but no time-of-use tariff is stored, so no cheap hours are invented." : "Turn on a time-of-use meter in the site profile only if you have one. This app still will not invent a tariff."}</p>
+            </section>
+          ) : null}
+          {demo && data.rows && timingHelps && plan.status === "low-solar" ? (
             <section className="hh-card">
               <h2>We can't place these loads in the forecast</h2>
               <p className="hh-note">Forecast PV in range is {plan.pvKwh.toFixed(1)} kWh. Flexible loads add up to {plan.flexibleKwh.toFixed(1)} kWh, and none fit a high-PV block before their deadline.</p>
               <span className="hh-pill estimated">PLAN_LOW_SOLAR</span>
               <Link className="hh-btn secondary" href="/household/loads">Edit loads</Link>
+              <h2>Other days in this forecast</h2>
+              {otherDays.length === 0 ? <p className="hh-note">No later day is in this forecast. The failed plan is not repeated as an alternative on the same day.</p> : otherDays.map((item) => (
+                <p key={item.day} className="hh-note">{dayLabel(item.day, zone)} · {item.pv?.toFixed(1)} kWh forecast PV</p>
+              ))}
             </section>
           ) : null}
-          {demo && data.rows && plan.status === "ready" ? (
+          {demo && data.rows && timingHelps && plan.status === "ready" ? (
             <section className="hh-card">
               <h2>Suggestions</h2>
               {plan.placed.map((item) => (
@@ -109,7 +128,8 @@ export default function PlanPage() {
                   <span className={`hh-pill ${item.status === "recommended" ? "measured" : item.status === "manual" ? "none" : "estimated"}`}>{item.status}</span>
                 </Link>
               ))}
-              <p className="hh-note">Suggestions only. You switch appliances on yourself. Nothing is controlled remotely.</p>
+              {plan.overload ? <p className="hh-help">At {plan.overload.hour} the placed loads add to {plan.overload.loadKw.toFixed(1)} kW against {plan.overload.pvKw.toFixed(1)} kW of forecast PV. A load is marked covered only when the running total still fits.</p> : <p className="hh-note">Placed loads were checked together against each hour of forecast PV. None of those hours is over the forecast.</p>}
+              <p className="hh-note">Suggestions only, and only because this scheme is Net Accounting. You switch appliances on yourself.</p>
             </section>
           ) : null}
           <Button type="button" variant="secondary" onClick={() => setSheet(true)}>Override or pause</Button>

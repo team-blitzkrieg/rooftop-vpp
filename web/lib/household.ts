@@ -273,8 +273,8 @@ export function buildSnapshot(
   } else if (!live) {
     bannerTitle = stale ? "Forecast is stale" : "No forecast for this hour";
     bannerBody = issuedAt
-      ? `Showing the latest forecast, issued ${formatUpdated(issuedAt, now.getTime()).replace(/^Updated /, "")}. These are not live meter readings.`
-      : "Showing the latest forecast. These are not live meter readings.";
+      ? `Showing the latest forecast, issued ${formatUpdated(issuedAt, now.getTime()).replace(/^Updated /, "")}. These are not live meter readings. The edge design keeps up to 7 days and uploads on reconnect. This app cannot see that buffer.`
+      : "Showing the latest forecast. These are not live meter readings. The edge design keeps up to 7 days and uploads on reconnect. This app cannot see that buffer.";
   }
 
   return {

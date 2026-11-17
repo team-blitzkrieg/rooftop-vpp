@@ -120,9 +120,9 @@ export default function HistoryPage() {
           <section className="hh-card">
             <div className="hh-row">
               <h2>Forecast coverage</h2>
-              <strong>{coverage}% of hours in this forecast</strong>
+              <strong>{known} of {hours.length} ({coverage}%)</strong>
             </div>
-            <p className="hh-note">{known} of {hours.length} hours have a PV or demand row. This is not recorded meter coverage.</p>
+            <p className="hh-note">{coverage}% is {known} divided by {hours.length}, for the {span} range on this screen. It is forecast hours, not a meter, and not a separate 7-day figure.</p>
           </section>
           <div className="hh-stats">
             <Mini label="Solar used" value={totals?.solarUsed ?? null} />

@@ -21,7 +21,7 @@ export default function WithdrawnPage() {
         <div style={{ textAlign: "center", marginTop: 24 }}>
           <IconCheck size={28} stroke="#2a7130" />
           <h1>You've left the demo</h1>
-          <p className="hh-note">{receipt ? `Thanks for looking, ${receipt.email.split("@")[0]}.` : "No withdrawal receipt is stored on this browser."}</p>
+          <p className="hh-note">{receipt ? "Thanks for taking part." : "No withdrawal receipt is stored on this browser."}</p>
         </div>
         {receipt ? (
           <section className="hh-card">

@@ -5,6 +5,8 @@ import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { AppHeader, Frame, RequireDemo } from "@/components/household/shell";
 import { CountUp, Segmented, useReducedMotion } from "@/components/household/ui";
 import { useHomeData } from "@/components/household/use-home-data";
+import { useDemo } from "@/lib/demo-store";
+import { timingChangesBill } from "@/lib/scheme-rules";
 import { sourceBadge, zonedParts } from "@/lib/household";
 import { addDays, todayKey } from "@/lib/household-derive";
 import { IconSun } from "@/components/household/icons";
@@ -14,6 +16,8 @@ type Span = "today" | "tomorrow" | "week";
 
 export default function ForecastPage() {
   const data = useHomeData();
+  const demo = useDemo();
+  const timing = timingChangesBill(demo?.profile?.scheme);
   const animate = !useReducedMotion();
   const zone = data.zone;
   const today = todayKey(zone);
@@ -89,24 +93,25 @@ export default function ForecastPage() {
               {source ? <span className={`hh-pill ${source.kind}`}>{source.text}</span> : null}
             </section>
             <section className="hh-card">
-              <p className="hh-fine">Measured so far</p>
-              <strong>—</strong>
-              <span className="hh-pill none">Not available</span>
+              <p className="hh-fine">Generated today</p>
+              <strong><CountUp value={data.snapshot.generatedKwh.value} suffix="kWh" /></strong>
+              <span className={`hh-pill ${data.snapshot.generatedKwh.source?.kind ?? "none"}`}>Same as Home</span>
+              <p className="hh-fine">A meter reading of "so far" is not available.</p>
             </section>
           </div>
           <Link href="/household/plan" className="hh-plain">
             <section className="hh-card">
               <div className="hh-row">
-                <div className="hh-iconbox" style={{ background: "#ff980022" }}><IconSun size={18} stroke="#a14a07" /></div>
+                <div className="hh-iconbox" style={{ background: "#ff980022" }}><IconSun size={18} stroke="#7c2d12" /></div>
                 <div className="hh-grow">
-                  <span className="hh-fine">Best window in the forecast</span>
+                  <span className="hh-fine">{timing ? "Best window in the forecast" : "Highest solar in the forecast"}</span>
                   <strong>{data.snapshot.window ? data.snapshot.window.label : "—"}</strong>
                 </div>
                 <span>›</span>
               </div>
             </section>
           </Link>
-          <p className="hh-note">Treat the best window as a suggestion from the forecast, not a guarantee. Passing clouds are not in these rows.</p>
+          <p className="hh-note">{timing ? "Treat the best window as a suggestion from the forecast, not a guarantee." : "This is the sunniest stretch in the forecast. Under this scheme it is not a bill saving."} Passing clouds are not in these rows.</p>
         </div>
       </RequireDemo>
     </Frame>

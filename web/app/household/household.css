@@ -136,10 +136,10 @@
 }
 
 .hh-pill.measured { color: #2a7130; background: #43a0471f; }
-.hh-pill.estimated { color: #a14a07; background: #ffa6001f; }
+.hh-pill.estimated { color: #7c2d12; background: #ffa6001f; }
 .hh-pill.simulated { color: #6d48b5; background: #a280db1f; }
 .hh-pill.other, .hh-pill.none { color: #4b5563; background: #6b72801f; }
-.hh-pill.stale { color: #a14a07; background: #ffa6001f; }
+.hh-pill.stale { color: #7c2d12; background: #ffa6001f; }
 .hh-pill.example { color: #0268a8; background: #03a9f41f; }
 
 .hh-pills { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -218,10 +218,10 @@
 }
 
 .hh-node.nf { left: 4px; top: 24px; border: 2px solid #0f9d58; color: #2a7130; }
-.hh-node.sol { left: 112px; top: 24px; border: 2px solid #ff9800; color: #a14a07; }
+.hh-node.sol { left: 112px; top: 24px; border: 2px solid #ff9800; color: #7c2d12; }
 .hh-node.gr { left: 4px; top: 122px; border: 2px solid #488fc2; color: #0268a8; }
 .hh-node.gr strong { font-size: 9px; }
-.hh-node.hm { left: 220px; top: 122px; border: 4px solid #ff9800; color: #a14a07; }
+.hh-node.hm { left: 220px; top: 122px; border: 4px solid #ff9800; color: #7c2d12; }
 .hh-node.bat { left: 112px; top: 220px; border: 2px dashed #9ca3af; color: #6b7280; }
 .hh-node.bat strong { font-size: 9px; font-weight: 600; max-width: 60px; }
 
@@ -328,7 +328,7 @@
   display: block;
   margin: 2px 0;
   font-size: 18px;
-  color: #a14a07;
+  color: #7c2d12;
 }
 
 .hh-tabs {
