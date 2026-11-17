@@ -64,6 +64,11 @@ h1 {
   color: var(--muted);
 }
 
+.sub a {
+  color: #0268a8;
+  font-weight: 600;
+}
+
 label {
   display: block;
   margin-bottom: 6px;
