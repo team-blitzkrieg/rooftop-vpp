@@ -23,7 +23,7 @@ def test_seed_is_idempotent_and_does_not_promote():
 
     assert store.sites["home-dehiwala"]["name"] == "Already there"
     assert set(DEMO_SITES) <= set(store.sites)
-    assert first["inserted_sites"] == ["home-moratuwa", "home-nugegoda"]
+    assert first["inserted_sites"] == ["demo-sim", "home-moratuwa", "home-nugegoda"]
     assert second["inserted_sites"] == []
     assert store.reading_count() == 0
     assert store.promoted_model("pv")["version"] == "real-pv"

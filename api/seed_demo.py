@@ -1,6 +1,11 @@
-"""Write a simulated 48-hour forecast for the three example homes.
+"""Write a simulated 48-hour forecast for every home we can locate.
 
     python -m api.seed_demo
+
+The sites table wins. forecasting/sites.example.csv fills a home that is
+not in the table yet, and fills tilt or azimuth when the table left them
+empty. demo-sim is in that file: 3 kW, 6.90 N, 79.86 E, demand scale 1.2.
+A missing tilt becomes 10 degrees and a missing azimuth becomes 180 (south).
 
 Manual only. It does not promote a model, does not upload an artefact, and
 does not insert meter readings, so the weekly retrain is unchanged. A second
@@ -26,7 +31,9 @@ from forecasting.synthetic import generate_simulated
 from forecasting.tables import load_sites, with_consumption
 
 DEMO_MODEL_VERSION = "demo"
-DEMO_SITES = ("home-dehiwala", "home-nugegoda", "home-moratuwa")
+DEMO_SITES = ("demo-sim", "home-dehiwala", "home-moratuwa", "home-nugegoda")
+DEFAULT_TILT_DEG = 10.0
+DEFAULT_AZIMUTH_DEG = 180.0
 HORIZON_HOURS = 48
 HISTORY_DAYS = 35
 SITE_FIELDS = (
@@ -69,7 +76,7 @@ def seed_store(
 
     `store.insert_model` is never called. Readings are not written.
     """
-    sites = _example_sites()
+    sites = sites_for_forecast(store)
     inserted = ensure_sites(store, sites)
     issued, bundles = build_demo_forecasts(
         sites,
@@ -78,7 +85,7 @@ def seed_store(
         history_days=history_days,
     )
     promoted_before = _promoted_count(store)
-    clear_demo(store, list(DEMO_SITES))
+    clear_demo(store, sites["site_id"].astype(str).tolist())
     written = 0
     for site_id, by_target in bundles.items():
         for target, rows in by_target.items():
@@ -292,13 +299,77 @@ def _hour_key(stamp) -> str:
     return pd.Timestamp(stamp).tz_convert(TIMEZONE).floor("h").isoformat()
 
 
-def _example_sites() -> pd.DataFrame:
-    sites = load_sites(EXAMPLE_SITES)
-    sites = sites.loc[sites["site_id"].isin(DEMO_SITES)].copy()
-    missing = [site_id for site_id in DEMO_SITES if site_id not in set(sites["site_id"])]
+def sites_for_forecast(store) -> pd.DataFrame:
+    """Sites to forecast: the table first, then the example CSV.
+
+    A table row without latitude, longitude, and system_kw is skipped unless
+    the CSV has that site. Tilt and azimuth fall back to the CSV, then to
+    10 degrees and south.
+    """
+    csv_sites = load_sites(EXAMPLE_SITES)
+    missing = [site_id for site_id in DEMO_SITES if site_id not in set(csv_sites["site_id"])]
     if missing:
         raise RuntimeError(f"Example sites file is missing {', '.join(missing)}")
-    return sites.sort_values("site_id").reset_index(drop=True)
+    csv_by_id = {str(row["site_id"]): row for row in csv_sites.to_dict(orient="records")}
+    chosen: dict[str, dict] = {}
+    for record in store.list_sites():
+        site_id = str(record["site_id"])
+        built = _site_row(record, csv_by_id.get(site_id))
+        if built is None:
+            print(f"Skipping {site_id}: latitude, longitude, and system_kw are required.")
+            continue
+        chosen[site_id] = built
+    for site_id, record in csv_by_id.items():
+        if site_id not in chosen:
+            chosen[site_id] = _site_row(record, record)
+    if not chosen:
+        raise RuntimeError("No sites to forecast. Add a row to sites or forecasting/sites.example.csv.")
+    rows = [chosen[site_id] for site_id in sorted(chosen)]
+    return pd.DataFrame(rows).reset_index(drop=True)
+
+
+def _site_row(record: dict, csv_row: dict | None) -> dict | None:
+    def pick(name: str, default=None):
+        value = record.get(name)
+        if _missing(value) and csv_row is not None:
+            value = csv_row.get(name)
+        if _missing(value):
+            return default
+        return value
+
+    latitude = pick("latitude")
+    longitude = pick("longitude")
+    system_kw = pick("system_kw")
+    if latitude is None or longitude is None or system_kw is None:
+        return None
+    tilt = pick("tilt_deg", DEFAULT_TILT_DEG)
+    azimuth = pick("azimuth_deg", DEFAULT_AZIMUTH_DEG)
+    demand = pick("demand_scale_kw", 1.0)
+    has_meter = pick("has_meter", True)
+    return {
+        "site_id": str(record["site_id"]),
+        "name": str(pick("name", record["site_id"])),
+        "location_id": str(pick("location_id", "colombo")),
+        "timezone": str(pick("timezone", "Asia/Colombo")),
+        "system_kw": float(system_kw),
+        "tilt_deg": float(tilt),
+        "azimuth_deg": float(azimuth),
+        "latitude": float(latitude),
+        "longitude": float(longitude),
+        "has_meter": bool(has_meter),
+        "demand_scale_kw": float(demand),
+    }
+
+
+def _missing(value) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return value.strip() == ""
+    try:
+        return bool(pd.isna(value))
+    except (TypeError, ValueError):
+        return False
 
 
 def _floor_hour(now) -> pd.Timestamp:

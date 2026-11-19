@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Seed three homes and a simulated 48-hour forecast
+      - name: Seed example homes and a simulated 48-hour forecast
         run: python -m api.seed_demo
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
