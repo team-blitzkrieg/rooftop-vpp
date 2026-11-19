@@ -48,11 +48,34 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def run_forecast(store) -> dict:
-    """Write today's forecast for each promoted target. A failure keeps the previous one."""
+def run_forecast(store, *, now=None, demo_estimators: int = 40) -> dict:
+    """Write today's forecast for each promoted target. A failure keeps the previous one.
+
+    When neither PV nor demand has a promoted model, refresh the labelled
+    simulated forecast instead of leaving the last demo issue in place.
+    That refresh does not promote a model and does not write meter readings.
+    """
     summary = {"targets": []}
+    promoted = {target: store.promoted_model(target) for target in ("pv", "demand")}
+    if promoted["pv"] is None and promoted["demand"] is None:
+        from api.seed_demo import seed_store
+
+        print(
+            "No promoted model. Refreshing the simulated forecast. "
+            "Rows stay data_label SIMULATED and nothing is promoted."
+        )
+        seeded = seed_store(store, now=now, n_estimators=demo_estimators, history_days=21)
+        summary["simulated_refresh"] = {
+            "issued_at": seeded["issued_at"],
+            "rows": seeded["rows"],
+            "data_label": "SIMULATED",
+            "model_version": seeded["model_version"],
+        }
+        summary["targets"].append({"target": "pv", "status": "simulated-refresh"})
+        summary["targets"].append({"target": "demand", "status": "simulated-refresh"})
+        return summary
     for target in ("pv", "demand"):
-        model = store.promoted_model(target)
+        model = promoted[target]
         if model is None:
             print(f"No promoted {target} model. The last forecast stays.")
             summary["targets"].append({"target": target, "status": "no-model"})

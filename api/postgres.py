@@ -351,6 +351,59 @@ class PostgresStore:
             columns = [item.name for item in cur.description]
         return dict(zip(columns, row))
 
+    def save_fault(
+        self,
+        site_id: str,
+        rule: str,
+        status: str,
+        *,
+        detail: str,
+        data_label: str,
+        is_simulated: bool,
+        checked_at=None,
+    ) -> None:
+        moment = checked_at or datetime.now(timezone.utc)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                insert into fault_results (
+                    site_id, rule, status, detail, checked_at, data_label, is_simulated
+                )
+                values (%s, %s, %s, %s, %s, %s, %s)
+                on conflict (site_id, rule) do update set
+                    status = excluded.status,
+                    detail = excluded.detail,
+                    checked_at = excluded.checked_at,
+                    data_label = excluded.data_label,
+                    is_simulated = excluded.is_simulated
+                """,
+                (site_id, rule, status, detail, moment, data_label, bool(is_simulated)),
+            )
+            conn.commit()
+
+    def list_faults(self, site_id: str | None = None) -> list[dict]:
+        with self._connect() as conn:
+            if site_id is None:
+                cur = conn.execute(
+                    """
+                    select site_id, rule, status, detail, checked_at, data_label, is_simulated
+                    from fault_results
+                    order by site_id, rule
+                    """
+                )
+            else:
+                cur = conn.execute(
+                    """
+                    select site_id, rule, status, detail, checked_at, data_label, is_simulated
+                    from fault_results
+                    where site_id = %s
+                    order by rule
+                    """,
+                    (site_id,),
+                )
+            columns = [item.name for item in cur.description]
+            return [dict(zip(columns, row)) for row in cur.fetchall()]
+
     def prune(self, *, now=None, reading_days: int = 90, forecast_days: int = 30) -> None:
         moment = now or datetime.now(timezone.utc)
         reading_cut = moment - timedelta(days=reading_days)

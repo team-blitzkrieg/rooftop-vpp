@@ -15,6 +15,7 @@ class MemoryStore:
         self.runs: list[dict] = []
         self.forecasts: list[dict] = []
         self.models: list[dict] = []
+        self.faults: list[dict] = []
         self._run_seq = 0
 
     def add_site(self, site_id: str, **fields) -> None:
@@ -212,6 +213,37 @@ class MemoryStore:
     def promoted_model(self, target: str) -> dict | None:
         found = [row for row in self.models if row["target"] == target and row["promoted"]]
         return found[-1] if found else None
+
+    def save_fault(
+        self,
+        site_id: str,
+        rule: str,
+        status: str,
+        *,
+        detail: str,
+        data_label: str,
+        is_simulated: bool,
+        checked_at=None,
+    ) -> None:
+        moment = checked_at or datetime.now(timezone.utc)
+        self.faults = [
+            row for row in self.faults if not (row["site_id"] == site_id and row["rule"] == rule)
+        ]
+        self.faults.append(
+            {
+                "site_id": site_id,
+                "rule": rule,
+                "status": status,
+                "detail": detail,
+                "checked_at": moment,
+                "data_label": data_label,
+                "is_simulated": bool(is_simulated),
+            }
+        )
+
+    def list_faults(self, site_id: str | None = None) -> list[dict]:
+        rows = self.faults if site_id is None else [row for row in self.faults if row["site_id"] == site_id]
+        return sorted(rows, key=lambda row: (row["site_id"], row["rule"]))
 
     def prune(self, *, now=None, reading_days: int = 90, forecast_days: int = 30) -> None:
         moment = now or datetime.now(timezone.utc)

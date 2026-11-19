@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # GitHub often starts this cron late, or skips an hour. The job still
+      # has to move issued_at when it does run. With no promoted model it
+      # refreshes the simulated forecast instead of exiting after a no-op.
       - name: Write the next 24 hours
         run: python -m api.jobs forecast
         env:

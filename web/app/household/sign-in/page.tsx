@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { IconAlert, IconEye, IconLock, IconMail, IconSun } from "@/components/household/icons";
 import { Button, Modal } from "@/components/household/ui";
-import { updateDemo } from "@/lib/demo-store";
+import { pullAccount } from "@/lib/account";
+import { saveDemo, updateDemo } from "@/lib/demo-store";
+import { browserSupabase } from "@/lib/supabase";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -14,6 +16,9 @@ export default function SignInPage() {
   const [error, setError] = useState("");
   const [attempts, setAttempts] = useState(0);
   const [modal, setModal] = useState<"forgot" | "request" | null>(null);
+  const [code, setCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [authNote, setAuthNote] = useState("");
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -25,10 +30,45 @@ export default function SignInPage() {
     }
     updateDemo((state) => ({
       ...state,
-      session: { email: email.trim(), signedInAt: new Date().toISOString() },
+      session: { email: email.trim(), signedInAt: new Date().toISOString(), mode: "demo", userId: null },
       withdrawReceipt: null,
     }));
     router.push("/household/welcome");
+  }
+
+  async function sendCode() {
+    const supabase = browserSupabase();
+    if (!supabase) {
+      setAuthNote("Email codes need the public Supabase key. Demo sign-in below still works.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setAuthNote("Enter an email address first.");
+      return;
+    }
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { shouldCreateUser: true },
+    });
+    setAuthNote(otpError ? otpError.message : "Check your email for a code. This does not control a device.");
+    if (!otpError) setCodeSent(true);
+  }
+
+  async function verifyCode() {
+    const supabase = browserSupabase();
+    if (!supabase) return;
+    const { data, error: verifyError } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: code.trim(),
+      type: "email",
+    });
+    if (verifyError || !data.user) {
+      setAuthNote(verifyError?.message ?? "That code was not accepted.");
+      return;
+    }
+    const remote = await pullAccount(data.user);
+    saveDemo(remote, { remote: true });
+    router.push(remote.consent || remote.consentSkipped ? "/household" : "/household/welcome");
   }
 
   return (
@@ -58,6 +98,20 @@ export default function SignInPage() {
             <input id="email" type="email" autoComplete="username" placeholder="name@example.lk" value={email} onChange={(event) => setEmail(event.target.value)} />
           </div>
         </div>
+        <section className="hh-card">
+          <h2>Email code</h2>
+          <p className="hh-note">Uses the email above. Supabase sends a one-time code and can create the account. It does not switch an inverter.</p>
+          {authNote ? <p className="hh-note">{authNote}</p> : null}
+          {codeSent ? (
+            <div className="hh-field">
+              <label htmlFor="code">Code from the email</label>
+              <div className="hh-input"><input id="code" inputMode="numeric" value={code} onChange={(event) => setCode(event.target.value)} /></div>
+              <Button type="button" onClick={() => void verifyCode()}>Check code</Button>
+            </div>
+          ) : (
+            <Button type="button" variant="secondary" onClick={() => void sendCode()}>Email me a code</Button>
+          )}
+        </section>
         <div className="hh-field">
           <label htmlFor="password">Password</label>
           <div className={`hh-input ${error ? "err" : ""}`}>
