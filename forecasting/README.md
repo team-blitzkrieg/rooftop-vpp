@@ -42,7 +42,7 @@ python -m forecasting train --synthetic --start 2024-06-01 --end 2024-06-21 --es
 python -m forecasting train --synthetic --resolution 15min --start 2024-06-01 --end 2024-06-21
 ```
 
-Sites live in `sites.example.csv`. Three houses around Colombo, with different nameplate, tilt and azimuth. Azimuth uses the pvlib convention: 180 is south, 90 is east.
+Sites live in `sites.example.csv`. Three houses around Colombo, with different nameplate, tilt and azimuth, plus `demo-sim`, the 3 kW simulated home at 6.90 N, 79.86 E. Azimuth uses the pvlib convention: 180 is south, 90 is east.
 
 Once a real log exists, put it outside git (`data/raw/`, not inside `weather/` or `live/`) and pass it in. Columns are `site_id`, `timestamp`, `pv_kw`. The weather file needs `ghi_wm2`, `dni_wm2`, `dhi_wm2`, `cloud_cover_pct`, `temp_c`, and either `site_id` or `location_id` (the city files from `data/pipeline` use `location_id`).
 

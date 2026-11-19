@@ -53,7 +53,9 @@ def run_forecast(store, *, now=None, demo_estimators: int = 40) -> dict:
 
     When neither PV nor demand has a promoted model, refresh the labelled
     simulated forecast instead of leaving the last demo issue in place.
-    That refresh does not promote a model and does not write meter readings.
+    That refresh covers every site in the table that has coordinates,
+    including demo-sim, and the example CSV fills any home the table does
+    not have yet. It does not promote a model and does not write meter readings.
     """
     summary = {"targets": []}
     promoted = {target: store.promoted_model(target) for target in ("pv", "demand")}
