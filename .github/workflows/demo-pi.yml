@@ -1,0 +1,57 @@
+name: Demo Pi
+
+# Pretends to be the Pi on site demo-sim until the real edge unit posts.
+# Readings are SIMULATED. This workflow does not command an inverter.
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      backfill_days:
+        description: Past days to seed. 0 posts only the latest slots.
+        required: false
+        default: "0"
+
+permissions:
+  contents: read
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Skip when DEMO_DEVICE_KEY is missing
+        id: gate
+        env:
+          DEMO_DEVICE_KEY: ${{ secrets.DEMO_DEVICE_KEY }}
+        run: |
+          if [ -z "$DEMO_DEVICE_KEY" ]; then
+            echo "DEMO_DEVICE_KEY is not set. Skipping the demo Pi. Add that Actions secret, then re-run."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.gate.outputs.skip != 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        if: steps.gate.outputs.skip != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: edge/sim/requirements.txt
+
+      - name: Install the simulator
+        if: steps.gate.outputs.skip != 'true'
+        run: pip install -r edge/sim/requirements.txt
+
+      - name: Post simulated readings
+        if: steps.gate.outputs.skip != 'true'
+        env:
+          DEMO_DEVICE_KEY: ${{ secrets.DEMO_DEVICE_KEY }}
+          INGEST_URL: ${{ vars.INGEST_URL }}
+          BACKFILL_DAYS: ${{ github.event.inputs.backfill_days || '0' }}
+        run: python -m edge.sim.demo_pi --backfill-days "$BACKFILL_DAYS"

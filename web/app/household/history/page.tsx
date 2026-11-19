@@ -7,6 +7,7 @@ import { AppHeader, Frame, RequireDemo, SiteTitle } from "@/components/household
 import { Segmented, useReducedMotion } from "@/components/household/ui";
 import { useHomeData } from "@/components/household/use-home-data";
 import { addDays, dayLabel, hoursForDay, rangeDays, sumHours, todayKey, type HourBar } from "@/lib/household-derive";
+import { DEMO_SIM_SITE } from "@/lib/household";
 
 type Span = "day" | "week" | "month" | "custom";
 
@@ -57,10 +58,17 @@ export default function HistoryPage() {
         <AppHeader
           title="Energy history"
           back={{ href: "/household", label: "‹" }}
-          simulated={data.snapshot.simulated}
+          simulated={data.snapshot.simulated || data.siteId === DEMO_SIM_SITE}
           offline={data.snapshot.mode === "offline"}
         />
         <div className="hh-main">
+          {data.siteId === DEMO_SIM_SITE ? (
+            <p className="hh-note">
+              Demo Pi readings for this home are SIMULATED
+              {data.readings && data.readings.length > 0 ? ` · latest ${data.readings[0].data_label}` : ""}.
+              The chart below is the forecast, not the meter.
+            </p>
+          ) : null}
           <Segmented
             label="History view"
             value={view}

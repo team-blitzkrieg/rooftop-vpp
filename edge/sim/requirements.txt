@@ -1,0 +1,5 @@
+# Slim install for the 30-minute demo Pi workflow. The full requirements.txt
+# also works. Pins match the versions the grid and forecast tests already use.
+numpy>=2.2,<2.5
+pandas>=2.2,<2.4
+pvlib>=0.11,<1

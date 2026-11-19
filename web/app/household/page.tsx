@@ -12,7 +12,8 @@ import { TodayCard } from "@/components/household/today-card";
 import { CountUp } from "@/components/household/ui";
 import { useHomeData } from "@/components/household/use-home-data";
 import { formatIssued } from "@/lib/forecast";
-import { dominantGrid, formatUpdated } from "@/lib/household";
+import { DEMO_SIM_SITE, dominantGrid, formatUpdated } from "@/lib/household";
+import type { MeterReading } from "@/components/household/use-home-data";
 import { useDemo } from "@/lib/demo-store";
 import { schemeLabel, timingChangesBill } from "@/lib/scheme-rules";
 
@@ -50,7 +51,7 @@ export default function HouseholdPage() {
         <AppHeader
           title={SiteTitle({ site: data.site })}
           offline={offline || forecast.length === 0}
-          simulated={snapshot.simulated}
+          simulated={snapshot.simulated || data.siteId === DEMO_SIM_SITE}
         />
         <div className="hh-main" style={{ paddingTop: 0 }}>
           <Link className="hh-link" href={data.siteId ? `/?site=${encodeURIComponent(data.siteId)}` : "/"}>
@@ -59,6 +60,7 @@ export default function HouseholdPage() {
         </div>
         <SiteSelect sites={data.sites} siteId={data.siteId} onChange={data.chooseSite} />
         <div className="hh-main">
+          {data.siteId === DEMO_SIM_SITE ? <DemoReadings readings={data.readings} note={data.readingsNote} /> : null}
           {data.error ? <p className="hh-setup">{data.error}</p> : null}
           {data.rows === null ? (
             <div className="hh-skel-stack" aria-hidden="true">
@@ -112,5 +114,50 @@ export default function HouseholdPage() {
         </div>
       </RequireDemo>
     </Frame>
+  );
+}
+
+function kw(value: number | null): string {
+  return value === null || Number.isNaN(value) ? "—" : `${Number(value).toFixed(2)} kW`;
+}
+
+function DemoReadings({ readings, note }: { readings: MeterReading[] | null; note: string }) {
+  const latest = readings?.[0] ?? null;
+  const simulated = !latest || latest.is_simulated || latest.data_label === "SIMULATED";
+  const when = latest
+    ? new Date(latest.timestamp).toLocaleString("en-GB", { timeZone: "Asia/Colombo", hourCycle: "h23" })
+    : "";
+  return (
+    <section className="hh-card">
+      <div className="hh-row">
+        <h2>Demo Pi readings</h2>
+        {simulated ? <span className="hh-pill simulated">SIMULATED</span> : <span className="hh-pill measured">{latest?.data_label || "Measured"}</span>}
+      </div>
+      <p className="hh-note">Demo home (SIMULATED). These are not a real meter, and this app does not command the inverter.</p>
+      {readings === null ? <p className="hh-fine">Loading readings.</p> : null}
+      {readings && readings.length === 0 ? (
+        <p className="hh-fine">{note || "No readings posted yet. The demo Pi sends SIMULATED slots about every 30 minutes."}</p>
+      ) : null}
+      {latest ? (
+        <>
+          <div className="hh-stats">
+            <Mini label="Solar" value={kw(latest.pv_kw)} />
+            <Mini label="Home use" value={kw(latest.consumption_kw)} />
+            <Mini label="Import" value={kw(latest.import_kw)} />
+            <Mini label="Export" value={kw(latest.export_kw)} />
+          </div>
+          <p className="hh-fine">{when} Colombo · {latest.data_label}</p>
+        </>
+      ) : null}
+    </section>
+  );
+}
+
+function Mini({ label, value }: { label: string; value: string }) {
+  return (
+    <section className="hh-card">
+      <p className="hh-fine">{label}</p>
+      <strong>{value}</strong>
+    </section>
   );
 }
