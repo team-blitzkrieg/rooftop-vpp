@@ -106,6 +106,7 @@ Repository secrets, Settings → Secrets and variables → Actions:
 | `SUPABASE_SERVICE_ROLE_KEY` | Storage upload and server-side writes |
 | `ADMIN_API_KEY` | Only if something calls `POST /models` |
 | `READ_API_KEY` | Optional. Empty means forecast reads are open |
+| `DEMO_DEVICE_KEY` | Raw token for the demo Pi on site `demo-sim`. Never commit it. |
 
 `GITHUB_TOKEN` is provided by Actions. You do not paste it.
 
@@ -115,6 +116,8 @@ Workflows:
 - `.github/workflows/retrain.yml` on Sunday 18:30 UTC, which is Monday 00:00 in Asia/Colombo. It trains on rows with `is_simulated = false`. Fewer than three issue days, and it keeps the promoted model. A worse test MAE is saved and not promoted.
 
 The weekly workflow has a manual input, `allow_synthetic`. Leave it false. Turning it on trains on generated rows and can replace the production model. The cron does not set it.
+
+`.github/workflows/demo-pi.yml` runs every 30 minutes and on demand. It posts SIMULATED readings for site `demo-sim` to the ingest URL. If `DEMO_DEVICE_KEY` is missing it prints a skip line and exits green. The manual input `backfill_days` seeds past days (0 posts only the latest slots). See `docs/edge-ingest.md`.
 
 `.github/workflows/seed-demo.yml` is manual only (`workflow_dispatch`, no cron). Actions → Seed demo → Run workflow. It inserts Dehiwala, Nugegoda and Moratuwa into `sites` when those ids are missing, trains PV and demand on the synthetic generator, and writes the next 48 hourly rows for `pv`, `demand` and `net`. Every row has `data_label` `SIMULATED`, `is_simulated` true, and `model_version` `demo`. It does not insert meter readings and it never sets `promoted` on `model_versions`, so the hourly job and the weekly retrain are unchanged. Running it again replaces the previous demo rows.
 
@@ -161,6 +164,8 @@ The last command exits 0 without `DATABASE_URL`. With the compose database it wi
 `api/migrations/2026-11-17-household.sql` adds profiles, consent, loads, pauses, seen alerts, coordinator assignments, cases, fault results, and the ingest rate-limit table. Paste it in the Supabase SQL editor. Row level security lets a signed-in user read and write their own rows. `anon` can read `fault_results`. It still cannot read `readings` or `devices`.
 
 The Pi posts to `POST /api/ingest` on the Vercel app. The contract is `docs/edge-ingest.md`. Set `SUPABASE_SERVICE_ROLE_KEY` on the `rooftop-web` Vercel project only. Do not prefix it with `NEXT_PUBLIC_`.
+
+The household screen reads `demo-sim` readings through that same server key and labels them SIMULATED. The browser key still cannot read `readings` for any other site.
 
 Email sign-in uses Supabase Auth (magic code). Demo sign-in stays in the browser and is labelled as a demo. In Authentication → Providers, email must stay enabled. The free project already includes that.
 

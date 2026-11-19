@@ -1,5 +1,8 @@
 import { isStale, type ForecastRow } from "@/lib/forecast";
 
+/** Seeded stand-in for a Pi. Readings for this site are SIMULATED. */
+export const DEMO_SIM_SITE = "demo-sim";
+
 export type SiteDetail = {
   site_id: string;
   name: string | null;
